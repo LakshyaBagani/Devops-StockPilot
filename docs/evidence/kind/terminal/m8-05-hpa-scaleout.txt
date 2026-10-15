@@ -1,0 +1,49 @@
+# m8-05-hpa-scaleout: HPA stockpilot-backend goes 2 -> 5 under the planner load and back to 2 after it stops (M8)
+# Recorded 2026-10-15 21:02-21:07 IST on kind 0.33.0 (Kubernetes v1.37.0, context kind-stockpilot), Helm 4.3.0, kubectl 1.37.1, Docker 29.4.1, macOS 26.5.1 arm64; HEAD 04c78c3 plus the uncommitted working tree.
+# Terminal 1 ran the watch; terminal 2 ran make loadtest at 21:02:24 and make loadtest-stop at 21:05:06.
+# Each watch line starts with the local time it arrived. The catalogue was seeded first (40 products).
+
+$ make loadtest
+scripts/load-test.sh start
+load-test: context kind-stockpilot
+precheck: GET http://stockpilot-backend.stockpilot.svc.cluster.local:8000/api/reorder-plan?service_level=95&horizon_days=30
+precheck: ok, a plan with 40 items
+job.batch/stockpilot-loadgen created
+pod/stockpilot-loadgen-6v99t condition met
+
+Load is running: Job default/stockpilot-loadgen calls the planner until make loadtest-stop, or for at most
+10 minutes. The HPA should reach 5 backend replicas within about 3 minutes.
+  kubectl --context kind-stockpilot -n stockpilot get hpa stockpilot-backend -w
+  kubectl --context kind-stockpilot -n stockpilot top pods
+  Grafana: kubectl --context kind-stockpilot -n monitoring port-forward svc/kube-prometheus-stack-grafana 13000:80,
+           then http://localhost:13000/d/stockpilot-overview
+Stop: make loadtest-stop
+
+$ kubectl --context kind-stockpilot -n stockpilot get hpa stockpilot-backend -w
+21:02:14 NAME                 REFERENCE                       TARGETS        MINPODS   MAXPODS   REPLICAS   AGE
+21:02:14 stockpilot-backend   Deployment/stockpilot-backend   cpu: 23%/60%   2         5         2          23m
+21:02:53 stockpilot-backend   Deployment/stockpilot-backend   cpu: 452%/60%   2         5         2          24m
+21:03:08 stockpilot-backend   Deployment/stockpilot-backend   cpu: 349%/60%   2         5         5          24m
+21:03:23 stockpilot-backend   Deployment/stockpilot-backend   cpu: 283%/60%   2         5         5          25m
+21:03:38 stockpilot-backend   Deployment/stockpilot-backend   cpu: 288%/60%   2         5         5          25m
+21:03:53 stockpilot-backend   Deployment/stockpilot-backend   cpu: 303%/60%   2         5         5          25m
+21:04:08 stockpilot-backend   Deployment/stockpilot-backend   cpu: 266%/60%   2         5         5          25m
+21:04:23 stockpilot-backend   Deployment/stockpilot-backend   cpu: 299%/60%   2         5         5          26m
+21:04:38 stockpilot-backend   Deployment/stockpilot-backend   cpu: 315%/60%   2         5         5          26m
+21:04:53 stockpilot-backend   Deployment/stockpilot-backend   cpu: 270%/60%   2         5         5          26m
+21:05:08 stockpilot-backend   Deployment/stockpilot-backend   cpu: 277%/60%   2         5         5          26m
+21:05:23 stockpilot-backend   Deployment/stockpilot-backend   cpu: 209%/60%   2         5         5          27m
+21:05:38 stockpilot-backend   Deployment/stockpilot-backend   cpu: 3%/60%     2         5         5          27m
+21:05:53 stockpilot-backend   Deployment/stockpilot-backend   cpu: 2%/60%     2         5         5          27m
+21:06:23 stockpilot-backend   Deployment/stockpilot-backend   cpu: 2%/60%     2         5         5          28m
+21:06:38 stockpilot-backend   Deployment/stockpilot-backend   cpu: 2%/60%     2         5         2          28m
+
+$ make loadtest-stop
+scripts/load-test.sh stop
+load-test: context kind-stockpilot
+job.batch "stockpilot-loadgen" deleted from default namespace
+
+# Timeline: make loadtest at 21:02:24; desired 5 at 21:03:05; REPLICAS 5 at 21:03:08 (44 s later).
+# make loadtest-stop at 21:05:06; REPLICAS 2 at 21:06:38 (92 s later: metrics lag plus the 60 s scale-down window).
+# Sampled every 5 s, no stockpilot pod left the Running phase while loaded; in the scale-down the three
+# removed backend pods showed Completed for a moment before deletion.

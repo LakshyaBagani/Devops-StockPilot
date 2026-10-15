@@ -1,0 +1,14 @@
+# m9-02-targets-up: the ServiceMonitor scrape pool, one up target per backend pod, and no target down anywhere (M9)
+# Recorded 2026-10-15 21:07 IST on kind 0.33.0 (Kubernetes v1.37.0, context kind-stockpilot), Helm 4.3.0, kubectl 1.37.1, Docker 29.4.1, macOS 26.5.1 arm64; HEAD 04c78c3 plus the uncommitted working tree.
+# Port-forward: kubectl --context kind-stockpilot -n monitoring port-forward svc/kube-prometheus-stack-prometheus 19090:9090
+
+$ curl -s 'localhost:19090/api/v1/targets?state=active' | jq -r '.data.activeTargets[] | select(.labels.namespace=="stockpilot") | [.scrapePool, .health, .labels.pod] | @tsv'
+serviceMonitor/stockpilot/stockpilot-backend/0	up	stockpilot-backend-5b4b8d99b6-khmnk
+serviceMonitor/stockpilot/stockpilot-backend/0	up	stockpilot-backend-5b4b8d99b6-2lzt2
+
+$ curl -s localhost:19090/api/v1/query --data-urlencode 'query=up{namespace="stockpilot"}' | jq -r '.data.result[] | [.metric.pod, .value[1]] | @tsv'
+stockpilot-backend-5b4b8d99b6-khmnk	1
+stockpilot-backend-5b4b8d99b6-2lzt2	1
+
+$ curl -s 'localhost:19090/api/v1/targets?state=active' | jq '[.data.activeTargets[] | select(.health != "up")] | length'
+0

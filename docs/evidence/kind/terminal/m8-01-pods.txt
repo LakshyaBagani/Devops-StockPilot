@@ -1,0 +1,10 @@
+# m8-01-pods: the stockpilot namespace, every pod Running, no hook or test pods left (M8)
+# Recorded 2026-10-15 21:07 IST on kind 0.33.0 (Kubernetes v1.37.0, context kind-stockpilot), Helm 4.3.0, kubectl 1.37.1, Docker 29.4.1, macOS 26.5.1 arm64; HEAD 04c78c3 plus the uncommitted working tree.
+
+$ kubectl --context kind-stockpilot -n stockpilot get pods -o wide
+NAME                                   READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+stockpilot-backend-5b4b8d99b6-2lzt2    1/1     Running   0          16m   10.244.0.60   stockpilot-control-plane   <none>           <none>
+stockpilot-backend-5b4b8d99b6-khmnk    1/1     Running   0          16m   10.244.0.58   stockpilot-control-plane   <none>           <none>
+stockpilot-frontend-85bc44cdd4-bzsmd   1/1     Running   0          16m   10.244.0.59   stockpilot-control-plane   <none>           <none>
+stockpilot-frontend-85bc44cdd4-hjl7l   1/1     Running   0          16m   10.244.0.57   stockpilot-control-plane   <none>           <none>
+stockpilot-postgres-0                  1/1     Running   0          27m   10.244.0.36   stockpilot-control-plane   <none>           <none>

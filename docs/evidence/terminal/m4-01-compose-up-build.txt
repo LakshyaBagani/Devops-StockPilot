@@ -1,0 +1,164 @@
+# m4-01-compose-up-build: compose builds and starts the three services, all healthy (M4)
+# Recorded 2026-10-15 20:14 IST on macOS 26.5.1 arm64, Docker 29.4.1, Compose 5.1.3; HEAD 04c78c3 plus the uncommitted working tree.
+
+$ make down
+docker compose down -v
+
+$ make up
+GIT_SHA=04c78c3bf8023beae5414f7ceb854a635e18d0f5 docker compose up --build --wait
+ Image stockpilot-frontend:dev Building
+ Image stockpilot-backend:dev Building
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.27kB done
+#1 DONE 0.0s
+
+#2 [backend internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2.76kB done
+#2 DONE 0.0s
+
+#3 [frontend internal] load build definition from Dockerfile
+#3 transferring dockerfile: 1.85kB done
+#3 DONE 0.0s
+
+#4 [backend internal] load metadata for docker.io/library/python:3.14-alpine@sha256:f6a589d43c42b9e7f7dc67a12d37132491f362859a5d750607710cc56da3bc72
+#4 DONE 0.0s
+
+#5 [backend internal] load .dockerignore
+#5 transferring context: 521B done
+#5 DONE 0.0s
+
+#6 [backend internal] load build context
+#6 transferring context: 1.06kB done
+#6 DONE 0.0s
+
+#7 [backend build 1/5] FROM docker.io/library/python:3.14-alpine@sha256:f6a589d43c42b9e7f7dc67a12d37132491f362859a5d750607710cc56da3bc72
+#7 resolve docker.io/library/python:3.14-alpine@sha256:f6a589d43c42b9e7f7dc67a12d37132491f362859a5d750607710cc56da3bc72 done
+#7 DONE 0.0s
+
+#8 [backend stage-1 5/7] COPY alembic.ini ./
+#8 CACHED
+
+#9 [backend stage-1 2/7] RUN python -m pip uninstall -y --root-user-action=ignore pip  && addgroup -S -g 10001 app  && adduser -S -D -H -u 10001 -G app app
+#9 CACHED
+
+#10 [backend build 4/5] COPY requirements-runtime.txt constraints.txt ./
+#10 CACHED
+
+#11 [backend stage-1 3/7] WORKDIR /app
+#11 CACHED
+
+#12 [backend build 3/5] RUN python -m venv /opt/venv
+#12 CACHED
+
+#13 [backend build 2/5] WORKDIR /build
+#13 CACHED
+
+#14 [backend stage-1 4/7] COPY --from=build /opt/venv /opt/venv
+#14 CACHED
+
+#15 [backend stage-1 6/7] COPY alembic ./alembic
+#15 CACHED
+
+#16 [backend build 5/5] RUN /opt/venv/bin/pip install -r requirements-runtime.txt -c constraints.txt  && /opt/venv/bin/pip uninstall -y pip
+#16 CACHED
+
+#17 [backend stage-1 7/7] COPY app ./app
+#17 CACHED
+
+#18 [frontend internal] load metadata for docker.io/nginxinc/nginx-unprivileged:1.30-alpine-slim@sha256:4ac59c85c8c46d9e91eaabd2122cda4923ba380cf11f4138e389f069bcdc77a3
+#18 DONE 0.0s
+
+#19 [backend] exporting to image
+#19 exporting layers done
+#19 exporting manifest sha256:038002bcc97170af90d64b31eb80a307f8ccc1d8b9422ea94a7dfec5d7c33e82 done
+#19 exporting config sha256:6bd21c9235928dc6b5c208fb63264f20609c1d8e27a944a18bc0b98acf1bb594 done
+#19 exporting attestation manifest sha256:eaef0bb4bbcefd208a272e88365e4353120974ca70e054308a63d52c6fee7ffa done
+#19 exporting manifest list sha256:c5445b3e8c4d09e88b5658752a3257798c800a633f7cd1e7db685ebafde128c5 done
+#19 naming to docker.io/library/stockpilot-backend:dev done
+#19 unpacking to docker.io/library/stockpilot-backend:dev done
+#19 DONE 0.0s
+
+#20 [backend] resolving provenance for metadata file
+#20 DONE 0.0s
+
+#21 [frontend internal] load metadata for docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#21 DONE 3.5s
+
+#22 [frontend internal] load .dockerignore
+#22 transferring context: 332B done
+#22 DONE 0.0s
+
+#23 [frontend stage-1 1/3] FROM docker.io/nginxinc/nginx-unprivileged:1.30-alpine-slim@sha256:4ac59c85c8c46d9e91eaabd2122cda4923ba380cf11f4138e389f069bcdc77a3
+#23 resolve docker.io/nginxinc/nginx-unprivileged:1.30-alpine-slim@sha256:4ac59c85c8c46d9e91eaabd2122cda4923ba380cf11f4138e389f069bcdc77a3 done
+#23 DONE 0.0s
+
+#24 [frontend build 1/6] FROM docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#24 resolve docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f done
+#24 DONE 0.0s
+
+#25 [frontend internal] load build context
+#25 transferring context: 3.16kB done
+#25 DONE 0.0s
+
+#26 [frontend build 2/6] WORKDIR /app
+#26 CACHED
+
+#27 [frontend build 3/6] COPY package.json package-lock.json .npmrc ./
+#27 CACHED
+
+#28 [frontend build 6/6] RUN npm run build
+#28 CACHED
+
+#29 [frontend stage-1 2/3] COPY templates/default.conf.template /etc/nginx/templates/default.conf.template
+#29 CACHED
+
+#30 [frontend build 5/6] COPY . .
+#30 CACHED
+
+#31 [frontend build 4/6] RUN npm ci
+#31 CACHED
+
+#32 [frontend stage-1 3/3] COPY --from=build /app/dist /usr/share/nginx/html
+#32 CACHED
+
+#33 [frontend] exporting to image
+#33 exporting layers done
+#33 exporting manifest sha256:ba9a79d2fdb8e8580f611cb8a0fe9e5ccb315d3b04b6e4e87a9a19a1291bdcbb done
+#33 exporting config sha256:3b467842fc12c417075942a9660a6d58c114908d4b585f7775b84ae98dcd198b done
+#33 exporting attestation manifest sha256:8e0658bde6fc3ff96d8390b1966c672627dd795bd91a0d7b945ba4795869b742 done
+#33 exporting manifest list sha256:2ec85a7130b29e66171674ea8c609b32a46346630da07c4ccf33b5609ca0c0ed done
+#33 naming to docker.io/library/stockpilot-frontend:dev done
+#33 unpacking to docker.io/library/stockpilot-frontend:dev done
+#33 DONE 0.0s
+
+#34 [frontend] resolving provenance for metadata file
+#34 DONE 0.0s
+ Image stockpilot-backend:dev Built
+ Image stockpilot-frontend:dev Built
+ Network stockpilot_default Creating
+ Network stockpilot_default Created
+ Volume stockpilot_pgdata Creating
+ Volume stockpilot_pgdata Created
+ Container stockpilot-postgres-1 Creating
+ Container stockpilot-postgres-1 Created
+ Container stockpilot-backend-1 Creating
+ Container stockpilot-backend-1 Created
+ Container stockpilot-frontend-1 Creating
+ Container stockpilot-frontend-1 Created
+ Container stockpilot-postgres-1 Starting
+ Container stockpilot-postgres-1 Started
+ Container stockpilot-postgres-1 Waiting
+ Container stockpilot-postgres-1 Healthy
+ Container stockpilot-backend-1 Starting
+ Container stockpilot-backend-1 Started
+ Container stockpilot-backend-1 Waiting
+ Container stockpilot-backend-1 Healthy
+ Container stockpilot-frontend-1 Starting
+ Container stockpilot-frontend-1 Started
+ Container stockpilot-backend-1 Waiting
+ Container stockpilot-frontend-1 Waiting
+ Container stockpilot-postgres-1 Waiting
+ Container stockpilot-backend-1 Healthy
+ Container stockpilot-postgres-1 Healthy
+ Container stockpilot-frontend-1 Healthy
+up: UI http://localhost:3000  API docs http://localhost:3000/api/docs  demo data: make seed

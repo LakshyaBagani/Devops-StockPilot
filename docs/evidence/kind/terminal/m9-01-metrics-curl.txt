@@ -1,0 +1,96 @@
+# m9-01-metrics-curl: the backend's /metrics with business (stockpilot_*) and HTTP (http_*) series (M9)
+# Recorded 2026-10-15 21:07 IST on kind 0.33.0 (Kubernetes v1.37.0, context kind-stockpilot), Helm 4.3.0, kubectl 1.37.1, Docker 29.4.1, macOS 26.5.1 arm64; HEAD 04c78c3 plus the uncommitted working tree.
+# Port-forward: kubectl --context kind-stockpilot -n stockpilot port-forward svc/stockpilot-backend 18000:8000
+# Counters are cumulative since the pod started (load test, movements); right before the curl, one OUT 20 and its
+# undo, one refused oversell (422) and one default plan went through this port-forward.
+
+$ curl -s localhost:18000/metrics | grep -E '^(# (HELP|TYPE) )?(http_request|stockpilot_)' | head -40
+# HELP stockpilot_movements_total Stock movements recorded, by kind
+# TYPE stockpilot_movements_total counter
+stockpilot_movements_total{kind="IN"} 1.0
+stockpilot_movements_total{kind="OUT"} 2.0
+stockpilot_movements_total{kind="ADJUST"} 0.0
+# HELP stockpilot_movements_created Stock movements recorded, by kind
+# TYPE stockpilot_movements_created gauge
+stockpilot_movements_created{kind="IN"} 1.7920776625126836e+09
+stockpilot_movements_created{kind="OUT"} 1.7920776625126908e+09
+stockpilot_movements_created{kind="ADJUST"} 1.792077662512695e+09
+# HELP stockpilot_units_moved_total Units moved (absolute delta) by recorded movements
+# TYPE stockpilot_units_moved_total counter
+stockpilot_units_moved_total{kind="IN"} 5.0
+stockpilot_units_moved_total{kind="OUT"} 40.0
+stockpilot_units_moved_total{kind="ADJUST"} 0.0
+# HELP stockpilot_units_moved_created Units moved (absolute delta) by recorded movements
+# TYPE stockpilot_units_moved_created gauge
+stockpilot_units_moved_created{kind="IN"} 1.7920776625126877e+09
+stockpilot_units_moved_created{kind="OUT"} 1.792077662512693e+09
+stockpilot_units_moved_created{kind="ADJUST"} 1.7920776625126967e+09
+# HELP stockpilot_insufficient_stock_total Movements rejected because stock would go below zero
+# TYPE stockpilot_insufficient_stock_total counter
+stockpilot_insufficient_stock_total 2.0
+# HELP stockpilot_insufficient_stock_created Movements rejected because stock would go below zero
+# TYPE stockpilot_insufficient_stock_created gauge
+stockpilot_insufficient_stock_created 1.7920776625126336e+09
+# HELP stockpilot_undo_total Movements undone
+# TYPE stockpilot_undo_total counter
+stockpilot_undo_total 2.0
+# HELP stockpilot_undo_created Movements undone
+# TYPE stockpilot_undo_created gauge
+stockpilot_undo_created 1.7920776625126386e+09
+# HELP stockpilot_planner_seconds Planner compute time inside the bulkhead (queue wait excluded)
+# TYPE stockpilot_planner_seconds histogram
+stockpilot_planner_seconds_bucket{le="0.05"} 0.0
+stockpilot_planner_seconds_bucket{le="0.1"} 0.0
+stockpilot_planner_seconds_bucket{le="0.25"} 76.0
+stockpilot_planner_seconds_bucket{le="0.5"} 290.0
+stockpilot_planner_seconds_bucket{le="1.0"} 337.0
+stockpilot_planner_seconds_bucket{le="2.5"} 337.0
+
+# The same scrape without the _created timestamps and histogram buckets, so the http_* series show too:
+
+$ curl -s localhost:18000/metrics | grep -E '^(stockpilot_|http_request)' | grep -vE '_created|_bucket'
+stockpilot_movements_total{kind="IN"} 1.0
+stockpilot_movements_total{kind="OUT"} 2.0
+stockpilot_movements_total{kind="ADJUST"} 0.0
+stockpilot_units_moved_total{kind="IN"} 5.0
+stockpilot_units_moved_total{kind="OUT"} 40.0
+stockpilot_units_moved_total{kind="ADJUST"} 0.0
+stockpilot_insufficient_stock_total 2.0
+stockpilot_undo_total 2.0
+stockpilot_planner_seconds_count 337.0
+stockpilot_planner_seconds_sum 116.20333671800836
+stockpilot_planner_scenarios_total 1.348e+07
+stockpilot_planner_inflight 0.0
+http_requests_total{handler="/api/reorder-plan",method="GET",status="2xx"} 337.0
+http_requests_total{handler="/api/version",method="GET",status="2xx"} 4.0
+http_requests_total{handler="/api/movements",method="POST",status="2xx"} 3.0
+http_requests_total{handler="/api/movements/{movement_id}",method="DELETE",status="2xx"} 2.0
+http_requests_total{handler="/api/movements",method="POST",status="4xx"} 2.0
+http_requests_total{handler="/api/products",method="GET",status="2xx"} 1.0
+http_request_size_bytes_count{handler="/api/reorder-plan"} 337.0
+http_request_size_bytes_sum{handler="/api/reorder-plan"} 0.0
+http_request_size_bytes_count{handler="/api/version"} 4.0
+http_request_size_bytes_sum{handler="/api/version"} 0.0
+http_request_size_bytes_count{handler="/api/movements"} 5.0
+http_request_size_bytes_sum{handler="/api/movements"} 282.0
+http_request_size_bytes_count{handler="/api/movements/{movement_id}"} 2.0
+http_request_size_bytes_sum{handler="/api/movements/{movement_id}"} 0.0
+http_request_size_bytes_count{handler="/api/products"} 1.0
+http_request_size_bytes_sum{handler="/api/products"} 0.0
+http_request_duration_highr_seconds_count 349.0
+http_request_duration_highr_seconds_sum 151.58092978297645
+http_request_duration_seconds_count{handler="/api/reorder-plan",method="GET"} 337.0
+http_request_duration_seconds_sum{handler="/api/reorder-plan",method="GET"} 151.51169240797572
+http_request_duration_seconds_count{handler="/api/version",method="GET"} 4.0
+http_request_duration_seconds_sum{handler="/api/version",method="GET"} 0.002890333000323153
+http_request_duration_seconds_count{handler="/api/movements",method="POST"} 5.0
+http_request_duration_seconds_sum{handler="/api/movements",method="POST"} 0.040538751001804485
+http_request_duration_seconds_count{handler="/api/movements/{movement_id}",method="DELETE"} 2.0
+http_request_duration_seconds_sum{handler="/api/movements/{movement_id}",method="DELETE"} 0.008782415998211945
+http_request_duration_seconds_count{handler="/api/products",method="GET"} 1.0
+http_request_duration_seconds_sum{handler="/api/products",method="GET"} 0.017025875000399537
+http_requests_inprogress{handler="/api/reorder-plan",method="GET"} 0.0
+http_requests_inprogress{handler="/api/version",method="GET"} 0.0
+http_requests_inprogress{handler="/api/movements",method="POST"} 0.0
+http_requests_inprogress{handler="/api/movements/{movement_id}",method="DELETE"} 0.0
+http_requests_inprogress{handler="/api/products",method="GET"} 0.0

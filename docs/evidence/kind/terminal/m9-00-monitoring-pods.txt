@@ -1,0 +1,14 @@
+# m9-00-monitoring-pods: the kube-prometheus-stack release and its pods (M9)
+# Recorded 2026-10-15 21:07 IST on kind 0.33.0 (Kubernetes v1.37.0, context kind-stockpilot), Helm 4.3.0, kubectl 1.37.1, Docker 29.4.1, macOS 26.5.1 arm64; HEAD 04c78c3 plus the uncommitted working tree.
+
+$ helm --kube-context kind-stockpilot list -n monitoring
+NAME                 	NAMESPACE 	REVISION	UPDATED                             	STATUS  	CHART                       	APP VERSION
+kube-prometheus-stack	monitoring	5       	2026-10-15 20:52:52.157339 +0530 IST	deployed	kube-prometheus-stack-92.7.0	v0.94.1    
+
+$ kubectl --context kind-stockpilot -n monitoring get pods
+NAME                                                       READY   STATUS    RESTARTS   AGE
+kube-prometheus-stack-grafana-5b97997db4-7tzdc             3/3     Running   0          3h34m
+kube-prometheus-stack-kube-state-metrics-c7bb69c55-2lpsw   1/1     Running   0          3h34m
+kube-prometheus-stack-operator-d6b49fb67-5rbqm             1/1     Running   0          3h34m
+kube-prometheus-stack-prometheus-node-exporter-p5gqd       1/1     Running   0          3h34m
+prometheus-kube-prometheus-stack-prometheus-0              2/2     Running   0          3h34m

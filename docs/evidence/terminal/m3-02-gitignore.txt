@@ -1,0 +1,44 @@
+# m3-02-gitignore: the ignore rules and what they keep out of Git (M3)
+# Recorded 2026-10-15 20:15 IST on macOS 26.5.1 arm64, Docker 29.4.1, Compose 5.1.3; HEAD 04c78c3 plus the uncommitted working tree.
+
+$ cat .gitignore
+# Secrets, local state and build output never enter Git.
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+dist/
+.pytest_cache/
+.coverage
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+tfplan
+*.tfplan
+crash.log
+
+# terraform/.terraform.lock.hcl is committed on purpose (pinned provider hashes). Never ignore it.
+
+# additions: macOS and tool output
+.DS_Store
+pytest-report.xml
+*.sarif
+htmlcov/
+*.db
+
+$ git check-ignore -v --no-index .env backend/.venv/x frontend/node_modules/x frontend/dist/x terraform/terraform.tfvars terraform/terraform.tfstate terraform/tfplan
+.gitignore:2:.env	.env
+.gitignore:7:.venv/	backend/.venv/x
+.gitignore:8:node_modules/	frontend/node_modules/x
+.gitignore:9:dist/	frontend/dist/x
+.gitignore:15:*.tfvars	terraform/terraform.tfvars
+.gitignore:13:*.tfstate	terraform/terraform.tfstate
+.gitignore:17:tfplan	terraform/tfplan
+
+$ git check-ignore --no-index .env.example terraform/terraform.tfvars.example terraform/.terraform.lock.hcl; echo "exit $? (1: none of them is ignored)"
+exit 1 (1: none of them is ignored)

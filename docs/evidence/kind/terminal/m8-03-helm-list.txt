@@ -1,0 +1,13 @@
+# m8-03-helm-list: the Helm release and its last revisions (M8)
+# Recorded 2026-10-15 21:07 IST on kind 0.33.0 (Kubernetes v1.37.0, context kind-stockpilot), Helm 4.3.0, kubectl 1.37.1, Docker 29.4.1, macOS 26.5.1 arm64; HEAD 04c78c3 plus the uncommitted working tree.
+
+$ helm --kube-context kind-stockpilot list -n stockpilot
+NAME      	NAMESPACE 	REVISION	UPDATED                             	STATUS  	CHART           	APP VERSION
+stockpilot	stockpilot	5       	2026-10-15 21:01:56.215472 +0530 IST	deployed	stockpilot-0.1.0	0.0.0-dev  
+
+$ helm --kube-context kind-stockpilot history stockpilot -n stockpilot --max 4
+REVISION	UPDATED                 	STATUS    	CHART           	APP VERSION	DESCRIPTION     
+2       	Thu Oct 15 20:41:47 2026	superseded	stockpilot-0.1.0	0.0.0-dev  	kind rehearsal2 
+3       	Thu Oct 15 20:50:55 2026	superseded	stockpilot-0.1.0	0.0.0-dev  	kind dev-04c78c3
+4       	Thu Oct 15 20:56:41 2026	superseded	stockpilot-0.1.0	0.0.0-dev  	kind dev-04c78c3
+5       	Thu Oct 15 21:01:56 2026	deployed  	stockpilot-0.1.0	0.0.0-dev  	kind dev-04c78c3
