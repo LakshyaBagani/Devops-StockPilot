@@ -1,0 +1,55 @@
+{{- if .Values.migrations.enabled }}
+{{- $component := dict "root" . "component" "migrate" -}}
+# Runs alembic upgrade head exactly once per release (python -m app.prestart waits for the database
+# first), so backend replicas never race each other on migrations. post-install, never pre-install:
+# before the first install Postgres does not exist yet. pre-upgrade migrates before new pods start.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "stockpilot.componentName" $component }}
+  labels:
+    {{- include "stockpilot.labels" $component | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-install,pre-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.migrations.activeDeadlineSeconds }}
+  ttlSecondsAfterFinished: {{ .Values.migrations.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      # component migrate, never backend: a running Job pod must not join the backend Service.
+      labels:
+        {{- include "stockpilot.labels" $component | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- include "stockpilot.podSecurityContext" 10001 | nindent 8 }}
+      containers:
+        - name: migrate
+          image: {{ include "stockpilot.image" (dict "root" . "image" .Values.backend.image) | quote }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          command: ["python", "-m", "app.prestart"]
+          # The database env only: on pre-upgrade the new ConfigMap does not exist yet.
+          env:
+            {{- include "stockpilot.dbEnv" . | nindent 12 }}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          securityContext:
+            {{- include "stockpilot.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+{{- end }}

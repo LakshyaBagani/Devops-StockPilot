@@ -1,0 +1,14 @@
+apiVersion: v2
+name: stockpilot
+description: >-
+  StockPilot inventory app: FastAPI backend with an HPA, React frontend on nginx, PostgreSQL 18
+  StatefulSet, a Traefik Ingress for / and /api, and Prometheus/Grafana wiring.
+type: application
+version: 0.1.0
+# CI stamps the 7-character commit SHA with helm package --app-version.
+appVersion: "0.0.0-dev"
+home: https://github.com/LakshyaBagani/Devops-StockPilot
+sources:
+  - https://github.com/LakshyaBagani/Devops-StockPilot
+maintainers:
+  - name: Lakshya Bagani

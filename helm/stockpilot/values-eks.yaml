@@ -1,0 +1,21 @@
+# EKS overlay. CI passes it after values.yaml and sets backend.image.tag, frontend.image.tag and
+# backend.gitSha with --set-string; tags are never set here.
+backend:
+  image:
+    repository: ghcr.io/lakshyabagani/stockpilot-backend
+    pullPolicy: IfNotPresent
+frontend:
+  image:
+    repository: ghcr.io/lakshyabagani/stockpilot-frontend
+    pullPolicy: IfNotPresent
+postgres:
+  storage:
+    storageClassName: "" # left out of the PVC, so the EBS CSI default class ebs-csi-default-sc (gp3) applies
+ingress:
+  className: traefik
+  annotations: {}
+# ALB fallback (plan section 10, terraform/alb-controller.tf.example) as overrides:
+#   --set ingress.className=alb
+#   --set-string 'ingress.annotations.alb\.ingress\.kubernetes\.io/scheme=internet-facing'
+#   --set-string 'ingress.annotations.alb\.ingress\.kubernetes\.io/target-type=ip'
+#   --set-string 'backend.service.annotations.alb\.ingress\.kubernetes\.io/healthcheck-path=/health'

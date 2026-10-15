@@ -1,0 +1,19 @@
+{{- /* The two stateless tiers only: a PDB on the single Postgres replica would block node drains. */ -}}
+{{- range $name := list "backend" "frontend" }}
+{{- $pdb := (index $.Values $name).pdb }}
+{{- if $pdb.enabled }}
+{{- $component := dict "root" $ "component" $name }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "stockpilot.componentName" $component }}
+  labels:
+    {{- include "stockpilot.labels" $component | nindent 4 }}
+spec:
+  minAvailable: {{ $pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "stockpilot.selectorLabels" $component | nindent 6 }}
+{{- end }}
+{{- end }}

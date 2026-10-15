@@ -1,0 +1,16 @@
+{{- $component := dict "root" . "component" "postgres" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "stockpilot.componentName" $component }}
+  labels:
+    {{- include "stockpilot.labels" $component | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "stockpilot.selectorLabels" $component | nindent 4 }}
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+      protocol: TCP

@@ -1,0 +1,18 @@
+# kind overlay (make kind-deploy): locally built arm64 images, copied to the node with kind load,
+# and kind's local-path StorageClass. make kind-deploy always overrides the tags with dev-<sha7>,
+# because a rebuilt image under an unchanged tag never rolls the pods.
+backend:
+  image:
+    repository: stockpilot-backend
+    tag: dev
+    pullPolicy: IfNotPresent # these images exist only on the kind node; Always would fail to pull
+frontend:
+  image:
+    repository: stockpilot-frontend
+    tag: dev
+    pullPolicy: IfNotPresent
+postgres:
+  storage:
+    storageClassName: standard
+ingress:
+  className: traefik

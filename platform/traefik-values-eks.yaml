@@ -1,0 +1,14 @@
+# Traefik chart 41.7.1 (Traefik v3.7.14) on EKS: two replicas behind an internet-facing Classic
+# LB that the EKS cloud provider creates in the public subnets tagged kubernetes.io/role/elb
+# (no extra IAM). make eks-bootstrap installs it through sp_traefik in scripts/lib/platform.sh,
+# with the same chart reference and version as kind.
+# No ALB or AWS Load Balancer Controller annotations: the ALB is the documented fallback.
+deployment:
+  replicas: 2
+service:
+  spec:
+    type: LoadBalancer
+providers:
+  kubernetesIngress:
+    publishedService:
+      enabled: true # kubectl get ingress then shows the LB hostname as ADDRESS

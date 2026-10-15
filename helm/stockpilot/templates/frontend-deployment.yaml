@@ -1,0 +1,76 @@
+{{- $component := dict "root" . "component" "frontend" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "stockpilot.componentName" $component }}
+  labels:
+    {{- include "stockpilot.labels" $component | nindent 4 }}
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "stockpilot.selectorLabels" $component | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "stockpilot.labels" $component | nindent 8 }}
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- include "stockpilot.podSecurityContext" 101 | nindent 8 }}
+      containers:
+        - name: frontend
+          image: {{ include "stockpilot.image" (dict "root" . "image" .Values.frontend.image) | quote }}
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            # nginx proxies /api here. It must be the FQDN: nginx's resolver ignores search domains.
+            - name: API_UPSTREAM
+              value: "{{ include "stockpilot.componentName" (dict "root" . "component" "backend") }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:8000"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}
+          securityContext:
+            {{- include "stockpilot.containerSecurityContext" . | nindent 12 }}
+          # The read-only root needs two writable dirs: /tmp (pid file, temp files) and conf.d,
+          # where the entrypoint renders default.conf from its template; without it nginx exits 1.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: nginx-conf
+          emptyDir:
+            sizeLimit: 1Mi

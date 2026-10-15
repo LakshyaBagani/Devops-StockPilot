@@ -1,0 +1,11 @@
+# Kept out of the packaged chart. Never list dashboards/: .Files.Get cannot read ignored files.
+.git/
+.gitignore
+.DS_Store
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+.vscode/
+.idea/

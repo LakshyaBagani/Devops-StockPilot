@@ -1,0 +1,36 @@
+{{- if .Values.ingress.enabled }}
+# /api goes straight to the backend (Traefik matches the longer prefix first), everything else to
+# the frontend. /health, /ready and /metrics are never routed: /metrics here returns the SPA.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "stockpilot.fullname" . }}
+  labels:
+    {{- include "stockpilot.labels" (dict "root" . "component" "ingress") | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "stockpilot.componentName" (dict "root" . "component" "backend") }}
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "stockpilot.componentName" (dict "root" . "component" "frontend") }}
+                port:
+                  number: 80
+      {{- with .Values.ingress.host }}
+      host: {{ . | quote }}
+      {{- end }}
+{{- end }}

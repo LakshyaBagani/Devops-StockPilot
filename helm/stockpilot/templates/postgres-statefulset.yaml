@@ -1,0 +1,85 @@
+{{- $component := dict "root" . "component" "postgres" -}}
+{{- $secret := .Values.postgres.existingSecret -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "stockpilot.componentName" $component }}
+  labels:
+    {{- include "stockpilot.labels" $component | nindent 4 }}
+spec:
+  serviceName: {{ include "stockpilot.componentName" $component }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "stockpilot.selectorLabels" $component | nindent 6 }}
+  template:
+    metadata:
+      # Selector labels only: no version label or checksum, so an app deploy never restarts the database.
+      labels:
+        {{- include "stockpilot.selectorLabels" $component | nindent 8 }}
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        {{- if .Values.postgres.hardened }}
+        runAsUser: 70
+        runAsGroup: 70
+        runAsNonRoot: true
+        fsGroup: 70
+        fsGroupChangePolicy: OnRootMismatch
+        {{- else }}
+        # The official image starts as root, chowns the data directory, then drops to uid 70.
+        fsGroup: 70
+        {{- end }}
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image | quote }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: {name: {{ $secret }}, key: username}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: {{ $secret }}, key: password}
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef: {name: {{ $secret }}, key: database}
+          readinessProbe:
+            # -h 127.0.0.1: the temporary server during initdb listens on the socket only, so
+            # readiness waits for the real one.
+            exec:
+              command: ["sh", "-c", "pg_isready -h 127.0.0.1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            {{- toYaml .Values.postgres.resources | nindent 12 }}
+          {{- if .Values.postgres.hardened }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          {{- end }}
+          volumeMounts:
+            # PG18 keeps PGDATA in /var/lib/postgresql/18/docker, so a lost+found at the
+            # volume root is harmless.
+            - name: data
+              mountPath: /var/lib/postgresql
+  volumeClaimTemplates:
+    # No labels: volumeClaimTemplates are immutable.
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- /* An empty storageClassName would mean "no class", so leave it out for the default class. */}}
+        {{- with .Values.postgres.storage.storageClassName }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.storage.size }}

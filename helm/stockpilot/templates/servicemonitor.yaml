@@ -1,0 +1,30 @@
+{{- /*
+Rendered only when the cluster serves the ServiceMonitor CRD (kube-prometheus-stack installs it),
+so a deploy before monitoring never fails. NOTES.txt warns when it was skipped. helm template
+renders it only with --api-versions monitoring.coreos.com/v1/ServiceMonitor.
+*/ -}}
+{{- if and .Values.metrics.serviceMonitor.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor") }}
+{{- $component := dict "root" . "component" "backend" -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "stockpilot.componentName" $component }}
+  labels:
+    {{- include "stockpilot.labels" $component | nindent 4 }}
+    {{- with .Values.metrics.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace | quote }}
+  # A subset of the backend Service's labels; Prometheus then scrapes every Ready backend pod.
+  selector:
+    matchLabels:
+      {{- include "stockpilot.selectorLabels" $component | nindent 6 }}
+  endpoints:
+    - port: http # the Service port name, not the number
+      path: /metrics
+      interval: {{ .Values.metrics.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.metrics.serviceMonitor.scrapeTimeout }}
+{{- end }}

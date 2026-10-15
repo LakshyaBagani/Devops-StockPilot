@@ -1,0 +1,29 @@
+{{- $backend := include "stockpilot.componentName" (dict "root" . "component" "backend") -}}
+StockPilot release {{ .Release.Name }} in namespace {{ .Release.Namespace }} (revision {{ .Release.Revision }})
+  backend   {{ include "stockpilot.image" (dict "root" . "image" .Values.backend.image) }}
+  frontend  {{ include "stockpilot.image" (dict "root" . "image" .Values.frontend.image) }}
+  git SHA   {{ .Values.backend.gitSha }}
+{{- if or (ne .Release.Name "stockpilot") (ne .Release.Namespace "stockpilot") }}
+
+WARNING: the release and namespace should both be "stockpilot". The load generator URL, the
+troubleshooting labs and the docs assume those names.
+{{- end }}
+{{- if and .Values.metrics.serviceMonitor.enabled (not (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor")) }}
+
+WARNING: ServiceMonitor NOT rendered - install kube-prometheus-stack, then re-run the deploy.
+{{- end }}
+
+The database Secret {{ .Release.Namespace }}/{{ .Values.postgres.existingSecret }} must exist before
+the deploy (make kind-up and make eks-bootstrap create it). Never print its values.
+
+Open the app:
+  kind  http://localhost:8080/  and  http://localhost:8080/api/docs
+  EKS   LB=$(kubectl -n traefik get svc traefik -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        then http://$LB/  and  http://$LB/api/docs
+
+Next steps:
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ $backend }} -- python -m app.seed
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ $backend }} 18000:8000              # backend /metrics
+  kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 19090:9090   # Prometheus
+  kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 13000:80        # Grafana

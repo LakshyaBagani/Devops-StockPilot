@@ -1,0 +1,21 @@
+{{- $component := dict "root" . "component" "backend" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "stockpilot.componentName" $component }}
+  # The ServiceMonitor selects on these labels; its endpoint uses the port name http.
+  labels:
+    {{- include "stockpilot.labels" $component | nindent 4 }}
+  {{- with .Values.backend.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "stockpilot.selectorLabels" $component | nindent 4 }}
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP

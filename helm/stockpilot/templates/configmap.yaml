@@ -1,0 +1,14 @@
+{{- /*
+Non-secret backend settings as env vars. The migrate Job never reads this ConfigMap: on
+pre-upgrade the new revision of it does not exist yet. APP_VERSION stays a code default.
+*/ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "stockpilot.componentName" (dict "root" . "component" "backend-config") }}
+  labels:
+    {{- include "stockpilot.labels" (dict "root" . "component" "backend") | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.backend.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
