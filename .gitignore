@@ -1,0 +1,28 @@
+# Secrets, local state and build output never enter Git.
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+dist/
+.pytest_cache/
+.coverage
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+tfplan
+*.tfplan
+crash.log
+
+# terraform/.terraform.lock.hcl is committed on purpose (pinned provider hashes). Never ignore it.
+
+# additions: macOS and tool output
+.DS_Store
+pytest-report.xml
+*.sarif
+htmlcov/
+*.db

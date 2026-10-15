@@ -1,0 +1,20 @@
+# Suppressions for the Trivy image gate: the CI step "Trivy gate (HIGH/CRITICAL, strict)"
+# and `make scan` both read this file, so it must exist even when it has no entries.
+# The SARIF report step does not read it: the Security tab always shows every finding.
+#
+# Policy. When a HIGH/CRITICAL appears, work down this ladder and stop at the first rung that clears it:
+#   1. Bump the base-image digest (when upstream has rebuilt the image).
+#   2. Bump the dependency pin (requirements-runtime.txt + constraints.txt, or package-lock.json),
+#      then run make test, make test-pg, the musllinux wheel check and make scan.
+#   3. Upgrade the package in the runtime stage: RUN apk add --no-cache --upgrade <pkg>
+#      (backend: before USER 10001:10001; frontend: between USER root and USER 101).
+#   4. Last resort, for an unfixed CVE with no alternative: one entry below with an expiry,
+#      a reason + owner comment above it, and a row in the README exceptions table.
+# Never hide a finding that rungs 1-3 fix. Trivy enforces the CVE again once the entry expires.
+# Any active entry changes the README result to "0 unsuppressed HIGH/CRITICAL; N documented exceptions".
+#
+# Entry format:
+# # <package> <installed version>: <why it is not exploitable here>. Owner: <name>.
+# CVE-YYYY-NNNNN exp:YYYY-MM-DD
+#
+# No active entries
