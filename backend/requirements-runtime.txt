@@ -1,0 +1,12 @@
+# Runtime dependencies: the only packages the backend image installs (with -c constraints.txt).
+fastapi==0.143.1
+starlette==1.8.0
+uvicorn[standard]==0.54.0
+sqlalchemy==2.1.4
+psycopg[binary]==3.3.6
+alembic==1.20.0
+pydantic==2.14.1
+pydantic-settings==2.16.0
+prometheus-fastapi-instrumentator==8.1.0
+# app/metrics.py imports prometheus_client directly, so it is pinned rather than left transitive.
+prometheus-client==0.26.0
