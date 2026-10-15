@@ -1,0 +1,59 @@
+# Lab t2: a Service selector that matches no pod. Walkthrough: troubleshooting/RUNBOOK.md section 4.
+#   Scenario   the Service selects app=lab-api-v2, but the pods carry app=lab-api.
+#   Symptom    the pod is Running 1/1, the EndpointSlice has no endpoints, connections are refused.
+#   Diagnose   kubectl -n stockpilot-lab get endpointslices -l kubernetes.io/service-name=lab-api-t2
+#              kubectl -n stockpilot-lab get svc lab-api-t2 -o jsonpath='{.spec.selector}'
+#              kubectl -n stockpilot-lab get pods -l scenario=t2 --show-labels
+#   Fix        kubectl -n stockpilot-lab patch svc lab-api-t2 --type merge -p '{"spec":{"selector":{"app":"lab-api"}}}'
+# Every object pins namespace stockpilot-lab. Never apply this to namespace stockpilot.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-api-t2
+  namespace: stockpilot-lab
+  labels: {app: lab-api, scenario: t2}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: lab-api, scenario: t2}
+  template:
+    metadata:
+      labels: {app: lab-api, scenario: t2}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: api
+          image: nginxinc/nginx-unprivileged:1.30-alpine-slim
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 16Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab-api-t2
+  namespace: stockpilot-lab
+  labels: {app: lab-api, scenario: t2}
+spec:
+  selector: {app: lab-api-v2, scenario: t2} # the bug: the pods are labelled app: lab-api
+  ports:
+    - {name: http, port: 80, targetPort: http}

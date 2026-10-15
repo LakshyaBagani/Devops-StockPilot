@@ -1,0 +1,41 @@
+# The long-lived namespaces, with Pod Security Admission labels. Applied by make kind-up,
+# make eks-bootstrap and every CI deploy; re-applying it changes nothing.
+# Deliberately absent: stockpilot-lab (the RUNBOOK labs create and delete it) and default
+# (the load generator runs there).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stockpilot
+  labels:
+    app.kubernetes.io/part-of: stockpilot
+    # Enforce baseline, and warn + audit at restricted. Only the postgres container trips the
+    # restricted warning: the official image starts as root, then drops to uid 70.
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/part-of: stockpilot
+    # prometheus-node-exporter needs hostNetwork, hostPID and hostPath mounts, which only
+    # the privileged level allows.
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/enforce-version: latest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: traefik
+  labels:
+    app.kubernetes.io/part-of: stockpilot
+    # Traefik 41.x pods run as non-root and drop ALL capabilities.
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest

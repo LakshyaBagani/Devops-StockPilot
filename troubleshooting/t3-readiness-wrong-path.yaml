@@ -1,0 +1,59 @@
+# Lab t3: a readiness probe on a path the image does not serve. Walkthrough: troubleshooting/RUNBOOK.md section 5.
+#   Scenario   the probe GETs /healthz, copied from the StockPilot frontend, but stock nginx has no /healthz.
+#   Symptom    the pod is Running but 0/1 Ready, and the Service never routes to it.
+#   Diagnose   kubectl -n stockpilot-lab describe pod -l scenario=t3 | grep -i 'readiness probe failed'
+#              -> Readiness probe failed: HTTP probe failed with statuscode: 404
+#   Fix        kubectl -n stockpilot-lab patch deploy lab-api-t3 --type json \
+#                -p '[{"op":"replace","path":"/spec/template/spec/containers/0/readinessProbe/httpGet/path","value":"/"}]'
+# Every object pins namespace stockpilot-lab. Never apply this to namespace stockpilot.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-api-t3
+  namespace: stockpilot-lab
+  labels: {app: lab-api, scenario: t3}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: lab-api, scenario: t3}
+  template:
+    metadata:
+      labels: {app: lab-api, scenario: t3}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: api
+          image: nginxinc/nginx-unprivileged:1.30-alpine-slim
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: {path: /healthz, port: http} # the bug: stock nginx answers 404 here
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 16Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab-api-t3
+  namespace: stockpilot-lab
+  labels: {app: lab-api, scenario: t3}
+spec:
+  selector: {app: lab-api, scenario: t3}
+  ports:
+    - {name: http, port: 80, targetPort: http}

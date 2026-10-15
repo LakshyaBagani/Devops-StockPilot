@@ -1,0 +1,58 @@
+# Lab t1: a wrong image tag. Walkthrough: troubleshooting/RUNBOOK.md section 3.
+#   Scenario   a typo in the tag (1.30-alpne-slim instead of 1.30-alpine-slim).
+#   Symptom    within 60 s the pod shows ErrImagePull, then ImagePullBackOff.
+#   Diagnose   kubectl -n stockpilot-lab describe pod -l scenario=t1 | grep -E 'Failed|Back-off'
+#              kubectl -n stockpilot-lab get events --sort-by=.lastTimestamp | grep -i pull
+#   Fix        kubectl -n stockpilot-lab set image deploy/lab-api-t1 api=nginxinc/nginx-unprivileged:1.30-alpine-slim
+# Every object pins namespace stockpilot-lab. Never apply this to namespace stockpilot.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-api-t1
+  namespace: stockpilot-lab
+  labels: {app: lab-api, scenario: t1}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: lab-api, scenario: t1}
+  template:
+    metadata:
+      labels: {app: lab-api, scenario: t1}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: api
+          image: nginxinc/nginx-unprivileged:1.30-alpne-slim # the bug: should be 1.30-alpine-slim
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 16Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab-api-t1
+  namespace: stockpilot-lab
+  labels: {app: lab-api, scenario: t1}
+spec:
+  selector: {app: lab-api, scenario: t1}
+  ports:
+    - {name: http, port: 80, targetPort: http}

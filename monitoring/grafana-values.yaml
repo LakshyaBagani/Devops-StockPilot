@@ -1,0 +1,14 @@
+# Grafana (a kube-prometheus-stack 92.7.0 subchart), installed together with prometheus-values.yaml.
+# The admin login comes from the Secret monitoring/grafana-admin, created out of band by make kind-up
+# and make eks-bootstrap and never committed. Read the password with:
+#   kubectl -n monitoring get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 --decode
+# Never set adminPassword, GF_*__FILE (it breaks the distroless image), persistence, an Ingress or a
+# LoadBalancer here: Grafana is reached through kubectl port-forward only.
+grafana:
+  admin: {existingSecret: grafana-admin, userKey: admin-user, passwordKey: admin-password}
+  resources: {requests: {cpu: 50m, memory: 192Mi}, limits: {memory: 512Mi}}
+  sidecar:
+    # Loads every ConfigMap labelled grafana_dashboard: "1" in any namespace, e.g. the chart's
+    # stockpilot-dashboard in namespace stockpilot.
+    dashboards: {enabled: true, label: grafana_dashboard, labelValue: "1", searchNamespace: ALL}
+    datasources: {alertmanager: {enabled: false}}   # Alertmanager is off: no dangling datasource

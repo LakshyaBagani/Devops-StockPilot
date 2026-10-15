@@ -1,0 +1,23 @@
+# kind cluster for the free local rehearsal: make kind-up creates it, make kind-down deletes it.
+# Context: kind-stockpilot. Traefik's NodePort 30080 is published on http://127.0.0.1:8080.
+#
+# Port mappings and the node image are fixed when the cluster is created: after changing them,
+# run make kind-down && make kind-up.
+#
+# Node image: Kubernetes v1.36.4 for parity with EKS 1.36 (kind v0.33.0's own default is v1.37.0),
+# copied verbatim from the kind v0.33.0 release notes. Keep the @sha256 digest: the release notes
+# say only the digest, never the bare tag, guarantees a node image built for that kind release.
+# A cluster created before this pin (the dev cluster ran v1.37.0) picks it up on its next
+# make kind-down && make kind-up.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: stockpilot
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+    extraPortMappings:
+      # containerPort must equal ports.web.nodePort in platform/traefik-values-kind.yaml.
+      - containerPort: 30080
+        hostPort: 8080
+        listenAddress: "127.0.0.1"
+        protocol: TCP

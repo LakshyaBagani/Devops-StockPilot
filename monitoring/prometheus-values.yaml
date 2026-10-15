@@ -1,0 +1,28 @@
+# kube-prometheus-stack 92.7.0: Prometheus, the operator, kube-state-metrics and node-exporter.
+# Grafana's values live in grafana-values.yaml. Installed once per cluster, before the app chart
+# (make kind-up, make eks-bootstrap):
+#   helm upgrade --install kube-prometheus-stack oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack \
+#     --version 92.7.0 -n monitoring -f monitoring/prometheus-values.yaml -f monitoring/grafana-values.yaml \
+#     --wait --timeout 10m
+# kind adds --set kubeProxy.enabled=false: kubeadm's kube-proxy serves its metrics on 127.0.0.1 only.
+alertmanager: {enabled: false}            # not graded; saves a pod
+kubeControllerManager: {enabled: false}   # EKS manages the control plane: empty pools, always-firing *Down alerts
+kubeScheduler: {enabled: false}
+kubeEtcd: {enabled: false}
+# kubeProxy stays on for EKS (>= 1.22 exposes :10249). If its target pool is DOWN, set {enabled: false}.
+prometheus:
+  prometheusSpec:
+    scrapeInterval: 15s                   # also the Grafana datasource timeInterval, so $__rate_interval = 1m
+    retention: 2d
+    retentionSize: 2GiB                   # emptyDir: no PVC, no EBS CSI dependency
+    serviceMonitorSelectorNilUsesHelmValues: false   # select ServiceMonitors without the release label
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}   # all namespaces
+    resources: {requests: {cpu: 100m, memory: 512Mi}, limits: {memory: 1536Mi}}
+prometheusOperator:
+  resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {memory: 256Mi}}
+kube-state-metrics:
+  resources: {requests: {cpu: 20m, memory: 64Mi}, limits: {memory: 256Mi}}
+prometheus-node-exporter:
+  resources: {requests: {cpu: 20m, memory: 32Mi}, limits: {memory: 128Mi}}
