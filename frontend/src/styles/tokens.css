@@ -1,0 +1,75 @@
+/*
+ * Design tokens for the 'godown ledger' identity: industrial, light, paper and ink.
+ * Contrast ratios are measured against --paper; bar fills against --track.
+ * Breakpoints (custom properties do not work inside @media):
+ *   640px  phone cards → table rows; bottom tab bar → header tabs
+ *   1024px record sheet docks right; product detail in two columns; header on one row
+ */
+:root {
+  color-scheme: light;
+
+  --paper: #f6f1e4;
+  --paper-raised: #fbf8f0;
+  --track: #e6ddcb;
+  --rule: #d9cfba;
+  --rule-faint: rgb(217 207 186 / 0.45);
+
+  --ink: #1d1b16; /* 15.3:1 */
+  --ink-soft: #57524a; /* 6.9:1 */
+  --ink-faint: #6e685e; /* 4.9:1 */
+
+  --hivis: #ffc21a; /* ink text on it 10.6:1 */
+  --hivis-press: #e6a800;
+
+  --in: #1e7b3a; /* 4.7:1 */
+  --out: #b3261e; /* 5.8:1 */
+  --adj: #2d5da8; /* 5.7:1 */
+
+  --cover-red: #c8281c; /* 4.1:1 */
+  --cover-amber: #a86400; /* 3.5:1 */
+  --cover-green: #237a48; /* 3.9:1 */
+  --cover-none: #7a7366; /* 3.5:1 */
+
+  --focus: #0b5fff; /* 4.6:1 */
+  --danger-bg: #fbe9e7;
+  --warn-bg: #fff3d1;
+  --ok-bg: #e6f2ea;
+
+  /* Toast edges sit on ink, so they are light: ≥ 3:1 against --ink. */
+  --toast-ok: #6fcf8f;
+  --toast-error: #ff8a80;
+
+  --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-label: 'IBM Plex Sans Condensed', 'Arial Narrow', sans-serif;
+  --font-num: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --leading: 1.45;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --r-sm: 2px;
+  --r-md: 4px;
+  --r-sheet: 14px;
+
+  --tabbar-h: 64px;
+  --header-h: 56px;
+  --maxw: 1180px;
+
+  --hazard: repeating-linear-gradient(-45deg, var(--hivis) 0 6px, var(--ink) 6px 12px);
+
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-sheet: 220ms;
+  --dur-bar: 400ms;
+}

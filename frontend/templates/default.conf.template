@@ -1,0 +1,75 @@
+# Rendered at container start by the image entrypoint (20-envsubst-on-templates.sh) into
+# /etc/nginx/conf.d/default.conf. Only API_UPSTREAM and NGINX_LOCAL_RESOLVERS use the
+# dollar-brace form; nginx variables are written $name, so envsubst leaves them alone.
+# One image for compose (API_UPSTREAM=backend:8000) and Kubernetes, where API_UPSTREAM must be
+# the backend FQDN because nginx's runtime resolver ignores search domains.
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    server_tokens off;
+    # Relative redirects, so :8080 never leaks behind compose's :3000 or the Ingress.
+    absolute_redirect off;
+
+    # 127.0.0.11 under compose, kube-dns in Kubernetes (filled in by 15-local-resolvers.envsh).
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s ipv6=off;
+    resolver_timeout 5s;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # Headers live per location, never at server level: /api/ would inherit the SPA's CSP and
+    # break Swagger UI (CDN assets and an inline script) at /api/docs.
+    location /api/ {
+        # A variable makes nginx resolve per request, so it boots without a backend. With no
+        # URI part, /api/... is forwarded unchanged.
+        set $api_upstream http://${API_UPSTREAM};
+        proxy_pass $api_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 60s;
+        error_page 502 504 = @api_unavailable;
+    }
+
+    # Backend unreachable: a FastAPI-shaped JSON error that the UI's API client understands.
+    location @api_unavailable {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        return 502 '{"detail":"API unavailable"}';
+    }
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # Hashed file names: cache forever. A miss is a plain 404, never index.html. Cache-Control
+    # has no 'always', so a 404 (an old pod mid-rollout) is never cached for a year.
+    location /assets/ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header X-Content-Type-Options "nosniff" always;
+    }
+
+    # The SPA: deep links such as /products/3 fall back to index.html. That fallback, and a
+    # direct /index.html, are served from this location again, so one header set covers both.
+    location / {
+        try_files $uri /index.html;
+        add_header Cache-Control "no-cache" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "no-referrer" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+        add_header Cross-Origin-Opener-Policy "same-origin" always;
+    }
+}
