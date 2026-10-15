@@ -1,0 +1,25 @@
+# The image copies only app/, alembic/, alembic.ini and the two dependency files. Everything below
+# also stays out of the build context: secrets, local state, caches and the test suite.
+
+# Secrets and local state
+.env
+.env.*
+.venv/
+*.db
+
+# Caches and reports
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+pytest-report.xml
+
+# Tests and dev-only files: the image runs no tests
+tests/
+conftest.py
+pytest.ini
+requirements-dev.txt
+Dockerfile
+.dockerignore

@@ -1,0 +1,86 @@
+# StockPilot on one machine: `make up` (or `docker compose up --build --wait`) starts exactly three
+# services, each one waiting until the one before it is healthy: postgres -> backend -> frontend.
+# UI http://localhost:3000, API docs http://localhost:3000/api/docs, then `make seed` for demo data.
+# Local development only. Defaults such as the password localdev are not secrets; a git-ignored
+# .env can override them (see .env.example).
+name: stockpilot
+
+services:
+  postgres:
+    # The same multi-arch index digest as PG_IMAGE in the Makefile (make digests compares them).
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_DB: stockpilot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localdev}
+    volumes:
+      - pgdata:/var/lib/postgresql # PostgreSQL 18 puts a versioned data directory below this
+    healthcheck:
+      # Over TCP: the image's first-start init server listens on the socket only, so it never
+      # counts as ready.
+      test: ["CMD-SHELL", 'pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+      start_interval: 1s
+    # No ports: only the backend reaches Postgres, and 5432 on the host stays free.
+    # on-failure, never always or unless-stopped: those would start the stack, and take ports 3000
+    # and 8000, every time Docker Desktop starts.
+    restart: on-failure:3
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        GIT_SHA: ${GIT_SHA:-dev}
+    image: stockpilot-backend:dev
+    # The same settings as the Helm ConfigMap. GIT_SHA (make up passes the commit) is what
+    # /api/version reports.
+    environment:
+      DATABASE_URL: postgresql+psycopg://app:${POSTGRES_PASSWORD:-localdev}@postgres:5432/stockpilot
+      GIT_SHA: ${GIT_SHA:-dev}
+      PLANNER_DEFAULT_SCENARIOS: "1000"
+      PLANNER_MAX_WORK: "4000000"
+      PLANNER_MAX_CONCURRENCY: "2"
+      PLANNER_QUEUE_TIMEOUT_S: "30"
+      LEAD_TIME_SPREAD: "0.7,1.0,1.6"
+    # Migrate, then exec uvicorn so that it runs as PID 1 and receives SIGTERM. The image's own CMD
+    # stays uvicorn only: in Kubernetes a Helm hook Job runs the migrations.
+    command:
+      - sh
+      - -c
+      - python -m app.prestart && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # /ready runs SELECT 1, so the frontend starts only once the API can reach its database.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 60s
+      start_interval: 2s
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:8000:8000"
+    restart: on-failure:3
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_GIT_SHA: ${GIT_SHA:-dev}
+    image: stockpilot-frontend:dev
+    environment:
+      API_UPSTREAM: backend:8000 # nginx proxies /api/ here
+    depends_on:
+      backend:
+        condition: service_healthy
+    # Health comes from the image's HEALTHCHECK on /healthz.
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:3000:8080"
+    restart: on-failure:3
+
+volumes:
+  pgdata:

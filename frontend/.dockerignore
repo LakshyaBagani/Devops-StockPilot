@@ -1,0 +1,13 @@
+# npm ci installs the linux packages inside the build stage. The host's node_modules holds macOS
+# native binaries, so it must stay out, with build output, env files and local clutter.
+node_modules
+dist
+.vite
+coverage
+npm-debug.log*
+.env
+.env.*
+.DS_Store
+README.md
+Dockerfile
+.dockerignore
