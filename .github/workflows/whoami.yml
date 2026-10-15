@@ -1,0 +1,94 @@
+name: whoami
+
+# Early OIDC trust check: proves this repo can assume stockpilot-gha-deploy and call
+# eks:DescribeCluster before any cluster exists. Dispatch it from main.
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: whoami
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  whoami:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # Required: the role trust only accepts ...:environment:production subjects.
+    environment: production
+    permissions:
+      id-token: write # request the GitHub OIDC token that AWS STS exchanges
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
+    steps:
+      # Runs before any AWS call, so a sub mismatch is visible even when assume-role fails.
+      # Only decoded payload claims are printed; the token never reaches a variable or the log.
+      - name: Print OIDC claims
+        id: claims
+        run: |
+          curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | python3 -c '
+          import base64, json, os, sys
+
+          payload = json.load(sys.stdin)["value"].split(".")[1]
+          claims = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
+          for key in ("sub", "aud", "environment", "repository_owner_id", "repository_id"):
+              print(f"{key}: {claims.get(key)}")
+          sub = claims.get("sub")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"sub={sub}\n")
+          '
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: gha-whoami-${{ github.run_id }}
+      - name: Caller identity
+        id: caller
+        run: |
+          arn=$(aws sts get-caller-identity --query Arn --output text)
+          echo "Caller: $arn"
+          echo "arn=$arn" >> "$GITHUB_OUTPUT"
+          case "$arn" in
+            *:assumed-role/stockpilot-gha-deploy/*) ;;
+            *)
+              echo "::error::expected an assumed-role/stockpilot-gha-deploy session, got $arn"
+              exit 1
+              ;;
+          esac
+      # ResourceNotFoundException means the call was authorised and no cluster exists yet.
+      - name: Permission probe
+        run: |
+          if [ -z "$EKS_CLUSTER_NAME" ]; then
+            echo "::error::the EKS_CLUSTER_NAME repository variable is not set"
+            exit 1
+          fi
+          if out=$(aws eks describe-cluster --name "$EKS_CLUSTER_NAME" --query cluster.status --output text 2>&1); then
+            echo "Cluster $EKS_CLUSTER_NAME is $out: eks:DescribeCluster is authorised"
+          elif grep -q ResourceNotFoundException <<< "$out"; then
+            echo "$out"
+            echo "eks:DescribeCluster is authorised; the cluster does not exist yet"
+          else
+            echo "$out"
+            echo "::error::eks:DescribeCluster failed; AccessDeniedException points at the role's inline policy"
+            exit 1
+          fi
+      - name: Summary
+        if: ${{ !cancelled() }}
+        env:
+          SUB: ${{ steps.claims.outputs.sub }}
+          ARN: ${{ steps.caller.outputs.arn }}
+        run: |
+          {
+            echo "### OIDC trust check"
+            echo
+            echo "- sub: \`${SUB:-unavailable}\`"
+            echo "- caller: \`${ARN:-unavailable}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

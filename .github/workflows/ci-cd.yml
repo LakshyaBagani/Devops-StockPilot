@@ -1,0 +1,473 @@
+name: ci-cd
+
+# Job ids are the check names that branch protection requires, so jobs carry no name: keys.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Weekly: full-history secrets scan and config scan only; the build jobs skip scheduled runs.
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Cancel superseded PR runs only. A cancelled main run can leave Helm in pending-upgrade.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    # An explicit bash shell runs every step with -eo pipefail.
+    shell: bash
+
+env:
+  PYTHON_VERSION: "3.14"
+  NODE_VERSION: "24"
+  TRIVY_VERSION: v0.75.0
+  TERRAFORM_VERSION: 1.16.6
+  HELM_VERSION: v4.3.0
+  KUBECTL_VERSION: v1.36.5
+
+jobs:
+  backend:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        # Same multi-arch index digest as PG_IMAGE in the Makefile.
+        image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: stockpilot_test
+        ports: ["5432:5432"]
+        # Over TCP, so the check fails while the init-time (socket-only) server is still running.
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U test -d stockpilot_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # Alembic migrates /postgres and pytest owns /stockpilot_test; conftest refuses equal URLs.
+      DATABASE_URL: postgresql+psycopg://test:test@localhost:5432/postgres
+      TEST_DATABASE_URL: postgresql+psycopg://test:test@localhost:5432/stockpilot_test
+      # Fail instead of silently falling back to SQLite.
+      TEST_REQUIRE_POSTGRES: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements*.txt
+            backend/constraints.txt
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt -c constraints.txt
+      - name: Lint
+        run: |
+          ruff check . --output-format=github
+          ruff format --check .
+      - name: Migrations round-trip
+        run: |
+          alembic upgrade head
+          alembic check
+          alembic downgrade base
+          alembic upgrade head
+      - name: Tests
+        run: |
+          pytest -v --durations=10 --cov=app --cov-report=term-missing \
+            --cov-report=markdown-append:"$GITHUB_STEP_SUMMARY" --junitxml=pytest-report.xml
+      - name: Upload pytest report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pytest-report
+          path: backend/pytest-report.xml
+          retention-days: 7
+
+  frontend:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VITE_GIT_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Upload dist
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 7
+
+  secrets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read # gitleaks lists the commits of a PR
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # PR and push runs scan the new commits; dispatch and schedule runs scan the full history.
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false" # the job has no pull-requests: write
+          GITLEAKS_VERSION: 8.30.1 # same scanner as the local make gitleaks
+      - name: No reference-project strings
+        # The bracket keeps the pattern from matching this file.
+        run: |
+          if grep -rIinE --exclude-dir=.git 'task[b]oard' .; then
+            echo "::error::reference project name found"
+            exit 1
+          fi
+
+  iac:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      TF_IN_AUTOMATION: "1"
+      TF_INPUT: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+      # Before init, so module code downloaded into .terraform/ is never checked.
+      - name: terraform fmt
+        run: terraform fmt -check -recursive -diff terraform
+      - name: terraform init
+        run: terraform -chdir=terraform init -backend=false -input=false
+      - name: Lock file unchanged by init
+        run: |
+          if ! git ls-files --error-unmatch terraform/.terraform.lock.hcl > /dev/null 2>&1 ||
+            ! git diff --exit-code -- terraform/.terraform.lock.hcl; then
+            echo "::error file=terraform/.terraform.lock.hcl::init created or changed the lock file. Run terraform -chdir=terraform providers lock -platform=darwin_arm64 -platform=linux_amd64 and commit it."
+            exit 1
+          fi
+      - name: terraform validate
+        run: terraform -chdir=terraform validate -no-color
+      - name: terraform test (mocked providers, no AWS)
+        run: terraform -chdir=terraform test
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: helm lint
+        run: |
+          for overlay in kind eks; do
+            helm lint helm/stockpilot -f helm/stockpilot/values.yaml -f "helm/stockpilot/values-$overlay.yaml"
+          done
+      - name: helm template
+        run: |
+          for overlay in kind eks; do
+            helm template stockpilot helm/stockpilot -n stockpilot \
+              -f helm/stockpilot/values.yaml -f "helm/stockpilot/values-$overlay.yaml" \
+              --api-versions monitoring.coreos.com/v1/ServiceMonitor > "$RUNNER_TEMP/render-$overlay.yaml"
+          done
+      - name: Chart contract (EKS render)
+        run: |
+          render="$RUNNER_TEMP/render-eks.yaml"
+          failed=0
+          # Each expression must print exactly "true". In yq a pipe binds tighter than and/or,
+          # so every and-chain after a pipe is parenthesised.
+          assert() {
+            if [ "$(yq ea "$2" "$render")" = true ]; then
+              echo "ok: $1"
+            else
+              echo "::error::chart contract broken: $1"
+              failed=1
+            fi
+          }
+          assert "one Ingress, class traefik" \
+            '[select(.kind == "Ingress")] | (length == 1 and .[0].spec.ingressClassName == "traefik")'
+          assert "/api routes to Service stockpilot-backend, port name http" \
+            '[select(.kind == "Ingress") | .spec.rules[].http.paths[] | select(.path == "/api") | .backend.service]
+              | (length == 1 and .[0].name == "stockpilot-backend" and .[0].port.name == "http")'
+          assert "/ routes to Service stockpilot-frontend, port 80" \
+            '[select(.kind == "Ingress") | .spec.rules[].http.paths[] | select(.path == "/") | .backend.service]
+              | (length == 1 and .[0].name == "stockpilot-frontend" and .[0].port.number == 80)'
+          assert "exactly one ServiceMonitor" '[select(.kind == "ServiceMonitor")] | length == 1'
+          for svc in stockpilot-backend stockpilot-frontend stockpilot-postgres; do
+            assert "Service $svc exists" "[select(.kind == \"Service\" and .metadata.name == \"$svc\")] | length == 1"
+          done
+          assert "every image has a tag or digest, never :latest" \
+            '[.. | select(tag == "!!map" and has("image")) | .image | select(tag == "!!str")
+              | select(test(":latest$") or (split("/") | .[-1] | test("[:@]") | not))] | length == 0'
+          exit "$failed"
+
+  config-scan:
+    # Advisory: no job needs it and it is never a required check.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write # upload the SARIF to code scanning
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Trivy config scan (report-only)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: sarif
+          output: trivy-config.sarif
+          exit-code: "0"
+          version: ${{ env.TRIVY_VERSION }}
+      - name: Upload SARIF
+        if: ${{ !cancelled() }}
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: trivy-config.sarif
+          category: trivy-config
+
+  image:
+    # Nothing is built, scanned or pushed unless the tests and the secrets scan are green.
+    needs: [backend, frontend, secrets]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write # push to GHCR with GITHUB_TOKEN
+      security-events: write # upload the Trivy SARIF
+    strategy:
+      fail-fast: false
+      # A single matrix key: extra keys or include would rename the required checks.
+      matrix:
+        component: [backend, frontend]
+    env:
+      COMPONENT: ${{ matrix.component }}
+      # Only main pushes images; PR runs build and scan without logging in.
+      PUSH: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compute lowercase GHCR image name
+        id: img
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/stockpilot-${COMPONENT}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Image tags and labels
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ steps.img.outputs.name }}
+          flavor: latest=false
+          tags: |
+            type=sha,format=long,prefix=
+            type=sha,prefix=sha-
+      - name: Build (amd64, loaded locally, not pushed)
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ matrix.component }}
+          platforms: linux/amd64
+          load: true
+          push: false
+          pull: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            BUILD_TIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VITE_GIT_SHA=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}
+      # Strict: unfixed HIGH/CRITICAL findings fail the build too.
+      - name: Trivy gate (HIGH/CRITICAL, strict)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+          scanners: vuln
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          format: table
+          trivyignores: .trivyignore
+          version: ${{ env.TRIVY_VERSION }}
+      # A separate step: with format sarif the action drops the severity filter, so exit-code 1
+      # would fail on LOW/MEDIUM. Trivy also reads ./.trivyignore by default; /dev/null keeps
+      # the Security tab view unsuppressed.
+      - name: Trivy SARIF report
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_IGNOREFILE: /dev/null
+        with:
+          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+          scanners: vuln
+          format: sarif
+          output: trivy-${{ matrix.component }}.sarif
+          skip-setup-trivy: true
+          version: ${{ env.TRIVY_VERSION }}
+      - name: Upload SARIF
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: trivy-${{ matrix.component }}.sarif
+          category: trivy-image-${{ matrix.component }}
+      - name: Log in to GHCR
+        if: env.PUSH == 'true'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # The exact image the gate scanned, under both SHA tags.
+      - name: Push scanned image
+        if: env.PUSH == 'true'
+        env:
+          IMAGE: ${{ steps.img.outputs.name }}
+        run: docker push --all-tags "$IMAGE"
+      - name: Summary
+        if: env.PUSH == 'true'
+        env:
+          IMAGE: ${{ steps.img.outputs.name }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          digest=$(docker image inspect "$IMAGE:$GITHUB_SHA" --format '{{join .RepoDigests "\n"}}' | grep -F "$IMAGE@" || true)
+          {
+            echo "### $COMPONENT image pushed"
+            echo
+            while read -r tag; do echo "- \`$tag\`"; done <<< "$TAGS"
+            echo "- digest: \`${digest:-unknown}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: [image, iac]
+    # DEPLOY_ENABLED is a repository variable: a job-level if is evaluated before environment variables exist.
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    permissions:
+      contents: read
+      id-token: write # GitHub OIDC -> AWS STS; no stored AWS keys
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
+      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      APP_URL: ${{ vars.APP_URL }}
+      RELEASE: stockpilot
+      NAMESPACE: stockpilot
+    steps:
+      - name: Preflight
+        run: |
+          missing=
+          for name in AWS_REGION EKS_CLUSTER_NAME AWS_DEPLOY_ROLE_ARN APP_URL; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::repository variables not set:$missing"
+            exit 1
+          fi
+          # A trailing slash would make //api/version, which Traefik routes to the SPA.
+          echo "APP_URL=${APP_URL%/}" >> "$GITHUB_ENV"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: gha-deploy-${{ github.run_id }}
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - uses: azure/setup-kubectl@bda439f5f36b99b262ebdcd3613869bddb064c8e # v5.2.0
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
+      - name: Write kubeconfig
+        run: aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_REGION"
+      - name: Apply namespaces
+        run: kubectl apply -f k8s/namespace.yaml
+      # Without it the release would sit out the 10-minute --wait and then roll back.
+      - name: Require the database Secret
+        run: |
+          if ! kubectl -n "$NAMESPACE" get secret stockpilot-db > /dev/null; then
+            echo "::error::Secret $NAMESPACE/stockpilot-db is missing: run make eks-bootstrap first"
+            exit 1
+          fi
+      - name: Package chart
+        run: helm package helm/stockpilot --app-version "${GITHUB_SHA::7}" -d "$RUNNER_TEMP/chart"
+      - name: Deploy (helm upgrade, rollback on failure)
+        run: |
+          helm upgrade --install "$RELEASE" "$RUNNER_TEMP"/chart/stockpilot-*.tgz -n "$NAMESPACE" \
+            -f helm/stockpilot/values.yaml -f helm/stockpilot/values-eks.yaml \
+            --set-string backend.image.tag="$GITHUB_SHA" \
+            --set-string frontend.image.tag="$GITHUB_SHA" \
+            --set-string backend.gitSha="$GITHUB_SHA" \
+            --description "deploy ${GITHUB_SHA::7} run $GITHUB_RUN_ID" \
+            --rollback-on-failure --wait --timeout 10m
+      - name: Rollout state
+        run: |
+          kubectl -n "$NAMESPACE" get deploy,pods,svc,ingress,hpa -o wide
+          helm -n "$NAMESPACE" history "$RELEASE" --max 3
+      - name: "Smoke: live SHA matches"
+        run: |
+          got=
+          for attempt in $(seq 1 30); do
+            if got=$(curl -fsS --max-time 5 "$APP_URL/api/version" | jq -r .git_sha) && [ "$got" = "$GITHUB_SHA" ]; then
+              echo "Smoke OK (attempt $attempt): $APP_URL serves $GITHUB_SHA"
+              exit 0
+            fi
+            echo "attempt $attempt: live ${got:-none}"
+            sleep 5
+          done
+          echo "::error::expected $GITHUB_SHA, live ${got:-none}"
+          exit 1
+      - name: Summary
+        run: |
+          revision=$(helm -n "$NAMESPACE" status "$RELEASE" -o json | jq -r .version)
+          backend=$(kubectl -n "$NAMESPACE" get deploy "$RELEASE-backend" -o jsonpath='{.spec.template.spec.containers[0].image}')
+          frontend=$(kubectl -n "$NAMESPACE" get deploy "$RELEASE-frontend" -o jsonpath='{.spec.template.spec.containers[0].image}')
+          {
+            echo "### Deployed \`${GITHUB_SHA::7}\` to $APP_URL"
+            echo
+            echo "- Helm release \`$RELEASE\`, revision $revision"
+            echo "- backend: \`$backend\`"
+            echo "- frontend: \`$frontend\`"
+          } >> "$GITHUB_STEP_SUMMARY"
