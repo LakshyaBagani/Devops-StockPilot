@@ -1,0 +1,29 @@
+# Copy to terraform.tfvars (git-ignored). Never credentials: auth is AWS_PROFILE=stockpilot.
+#
+# The REPLACE_WITH_* placeholders fail validation on purpose, so an unedited copy can never plan.
+
+# aws sts get-caller-identity --query Account --output text
+aws_account_id = "REPLACE_WITH_12_DIGIT_ACCOUNT_ID"
+
+aws_region         = "ap-south-1"
+project_name       = "stockpilot"
+cluster_name       = "stockpilot-eks"
+kubernetes_version = "1.36"
+vpc_cidr           = "10.0.0.0/16"
+
+# On the Free plan use ["m7i-flex.large"]: the same value as NODE_INSTANCE_TYPES (B77).
+node_instance_types = ["t3a.large", "t3.large"]
+node_min_size       = 2
+node_desired_size   = 2
+node_max_size       = 3
+
+# gh api repos/LakshyaBagani/Devops-StockPilot --jq '.owner.login, .name, .owner.id, .id'
+# Paste all four, never retype them: the trust policy compares them case-sensitively.
+github_owner    = "LakshyaBagani"
+github_repo     = "Devops-StockPilot"
+github_owner_id = "REPLACE_WITH_OWNER_ID"
+github_repo_id  = "REPLACE_WITH_REPO_ID"
+
+# false if the provider already exists:
+# aws iam list-open-id-connect-providers --output text | grep token.actions.githubusercontent.com
+create_github_oidc_provider = true

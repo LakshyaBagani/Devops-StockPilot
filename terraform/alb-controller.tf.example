@@ -1,0 +1,40 @@
+# FALLBACK ONLY: IAM for the AWS Load Balancer Controller through EKS Pod Identity.
+#
+# Use it when the Traefik Service gets no load balancer address although the public subnets carry
+# kubernetes.io/role/elb and each node has exactly one cluster-tagged security group. It does not
+# help with an account-level ELB block (OperationNotPermitted): an ALB uses the same API, so only an
+# AWS support case does.
+#
+#   1. Rename this file to alb-controller.tf, then in your own terminal (type yes, about +4 resources):
+#        terraform -chdir=terraform init -input=false
+#        terraform -chdir=terraform apply -target=module.aws_lb_controller_pod_identity
+#      The -target keeps the live cluster and node group out of the plan: never re-apply a live
+#      cluster, because the floating add-on and AMI versions would roll the nodes.
+#   2. Install the controller. region and vpcId are mandatory: the nodes' IMDS hop limit of 1 keeps
+#      the controller from discovering them.
+#        helm --kube-context stockpilot-eks upgrade --install aws-load-balancer-controller \
+#          aws-load-balancer-controller --repo https://aws.github.io/eks-charts --version 3.6.0 \
+#          -n kube-system --set clusterName=stockpilot-eks --set region=ap-south-1 \
+#          --set vpcId="$(terraform -chdir=terraform output -raw vpc_id)" \
+#          --set serviceAccount.name=aws-load-balancer-controller \
+#          --set enableServiceMutatorWebhook=false --wait
+#   3. App values: ingress.className alb, with the annotations
+#      alb.ingress.kubernetes.io/scheme: internet-facing and alb.ingress.kubernetes.io/target-type: ip,
+#      and alb.ingress.kubernetes.io/healthcheck-path: /health on the backend Service.
+#   4. Teardown (make eks-down does this when the controller exists): delete the Ingress first, wait
+#      until no elbv2 load balancer remains in the VPC, and only then uninstall the controller.
+module "aws_lb_controller_pod_identity" {
+  source  = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "2.9.0"
+
+  name                            = "${var.cluster_name}-aws-lbc"
+  attach_aws_lb_controller_policy = true
+
+  associations = {
+    this = {
+      cluster_name    = module.eks.cluster_name
+      namespace       = "kube-system"
+      service_account = "aws-load-balancer-controller"
+    }
+  }
+}
