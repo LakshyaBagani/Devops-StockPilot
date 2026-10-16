@@ -618,24 +618,24 @@ repository or an AWS session. Every PNG goes into `docs/evidence/` under the nam
 | M6 | 2–3 sentences on what Trivy scanned and the result | [Security scan explained](#security-scan-explained) | In repo |
 | M7 | `terraform/`: all `.tf` files | [`terraform/`](terraform/) | In repo |
 | M7 | `terraform plan` output screenshot | [`m7-00-init-fmt-validate.png`](docs/evidence/m7-00-init-fmt-validate.png), `m7-01-plan.png` | After EKS (needs the AWS account) |
-| M7 | AWS Console with the VPC and the EKS cluster | `m7-02-vpc-resource-map.png`, `m7-03-eks-console-nodegroup.png`, `m7-03b-kubectl-nodes.png` | After EKS |
+| M7 | AWS Console with the VPC and the EKS cluster | [`m7-02-vpc-public-subnets.png`](docs/evidence/m7-02-vpc-public-subnets.png) (2 public + 2 private subnets, IGW, NAT), [`m7-03-eks-cluster-nodegroup.png`](docs/evidence/m7-03-eks-cluster-nodegroup.png) (EKS 1.36 ACTIVE, node group, 2 nodes Ready) | Done (EKS `spilot-eks`, ap-southeast-2) |
 | M7 | `terraform destroy` completion | `m7-04-destroy.png` | After EKS |
 | M7 | (supporting) `terraform.tfvars.example`, no credentials in Git | [`terraform.tfvars.example`](terraform/terraform.tfvars.example); `m7-05-gitleaks-full-history.png` (after GitHub); [`m7-06-gitleaks-local.png`](docs/evidence/m7-06-gitleaks-local.png) (to capture before the first push); optional `m7-07-oidc-whoami.png` (after EKS setup) | In repo; PNGs pending |
 | M8 | `k8s/`: namespace and bootstrap manifests | [`k8s/`](k8s/) | In repo |
 | M8 | `helm/`: the chart | [`helm/stockpilot/`](helm/stockpilot/) | In repo |
-| M8 | `kubectl get pods` with every pod Running | kind: [transcript](docs/evidence/kind/terminal/m8-01-pods.txt); EKS: `m8-01-pods.png` | Transcript; PNG after EKS |
-| M8 | `kubectl get svc` | kind: [transcript](docs/evidence/kind/terminal/m8-02-svc.txt); EKS: `m8-02-svc.png` | Transcript; PNG after EKS |
-| M8 | `helm list` | kind: [transcript](docs/evidence/kind/terminal/m8-03-helm-list.txt); EKS: `m8-03-helm-list.png` | Transcript; PNG after EKS |
-| M8 | Browser through the Ingress or load balancer | `m8-04-ingress-browser.png` | After EKS |
-| M8 | (supporting) `k8s/namespace.yaml` applies cleanly | `m8-00-namespace-apply.png` | After EKS |
-| M8 | (supporting) HPA scale-out 2 → 5 → 2 | kind: [transcript](docs/evidence/kind/terminal/m8-05-hpa-scaleout.txt); EKS: `m8-05-hpa-scaleout.png` | Transcript; PNG after EKS |
-| M8 | (supporting) Ingress rules, `/api` answered by uvicorn | kind: [transcript](docs/evidence/kind/terminal/m8-06-ingress-rules.txt); EKS: `m8-06-ingress-rules.png` | Transcript; PNG after EKS |
-| M8 | (supporting) The CI deploy job's `helm upgrade` and smoke test | `m8-07-deploy-job-log.png` | After GitHub and EKS |
+| M8 | `kubectl get pods` with every pod Running | kind: [transcript](docs/evidence/kind/terminal/m8-01-pods.txt); EKS: [`m8-01-pods.png`](docs/evidence/m8-01-pods.png) | Done |
+| M8 | `kubectl get svc` | kind: [transcript](docs/evidence/kind/terminal/m8-02-svc.txt); EKS: [`m8-02-svc.png`](docs/evidence/m8-02-svc.png) | Done |
+| M8 | `helm list` | kind: [transcript](docs/evidence/kind/terminal/m8-03-helm-list.txt); EKS: [`m8-03-helm-list.png`](docs/evidence/m8-03-helm-list.png) | Done |
+| M8 | Browser through the Ingress or load balancer | [`m8-04-ingress-browser.png`](docs/evidence/m8-04-ingress-browser.png) | Done |
+| M8 | (supporting) `k8s/namespace.yaml` applies cleanly | [`m8-00-namespace-apply.png`](docs/evidence/m8-00-namespace-apply.png) | Done |
+| M8 | (supporting) HPA scale-out 2 → 5 → 2 | kind: [transcript](docs/evidence/kind/terminal/m8-05-hpa-scaleout.txt); EKS: [`m8-05-hpa-scaleout.png`](docs/evidence/m8-05-hpa-scaleout.png) (2 → 3 → 5 under planner load) | Done |
+| M8 | (supporting) Ingress rules, `/api` answered by uvicorn | kind: [transcript](docs/evidence/kind/terminal/m8-06-ingress-rules.txt); EKS: [`m8-06-ingress-rules.png`](docs/evidence/m8-06-ingress-rules.png) | Done |
+| M8 | (supporting) The CI deploy job's `helm upgrade` and smoke test | [`m8-07-deploy-job-log.png`](docs/evidence/m8-07-deploy-job-log.png) | Done |
 | M9 | `monitoring/`: Prometheus and Grafana values | [`monitoring/`](monitoring/) | In repo |
-| M9 | `curl` of the backend's `/metrics` | kind: [transcript](docs/evidence/kind/terminal/m9-01-metrics-curl.txt); EKS: `m9-01-metrics-curl.png` | Transcript; PNG after EKS |
-| M9 | Prometheus Targets page with the app UP | kind: [transcript](docs/evidence/kind/terminal/m9-02-targets-up.txt); EKS: `m9-02-targets-up.png` | Transcript; PNG after EKS |
-| M9 | Grafana dashboard with a populated panel | `m9-03-grafana.png` | After EKS |
-| M9 | (supporting) The monitoring release and its pods | kind: [transcript](docs/evidence/kind/terminal/m9-00-monitoring-pods.txt); EKS: `m9-00-monitoring-pods.png` | Transcript; PNG after EKS |
+| M9 | `curl` of the backend's `/metrics` | kind: [transcript](docs/evidence/kind/terminal/m9-01-metrics-curl.txt); EKS: [`m9-01-metrics-curl.png`](docs/evidence/m9-01-metrics-curl.png) | Done |
+| M9 | Prometheus Targets page with the app UP | kind: [transcript](docs/evidence/kind/terminal/m9-02-targets-up.txt); EKS: [`m9-02-targets-up.png`](docs/evidence/m9-02-targets-up.png) (5/5 UP), [`m9-02b-up-query.png`](docs/evidence/m9-02b-up-query.png) | Done |
+| M9 | Grafana dashboard with a populated panel | [`m9-03-grafana.png`](docs/evidence/m9-03-grafana.png) | Done |
+| M9 | (supporting) The monitoring release and its pods | kind: [transcript](docs/evidence/kind/terminal/m9-00-monitoring-pods.txt); EKS: [`m9-00-monitoring-pods.png`](docs/evidence/m9-00-monitoring-pods.png) | Done |
 | M10 | `README.md` in the repository root | This file | In repo |
 | M10 | Live demo, or a recorded walkthrough | [docs/demo-script.md](docs/demo-script.md); the backup video is recorded during the EKS rehearsal | Script in repo; video after EKS |
 
