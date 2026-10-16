@@ -605,7 +605,7 @@ repository or an AWS session. Every PNG goes into `docs/evidence/` under the nam
 | M4 | (supporting) The backend image builds | [transcript](docs/evidence/terminal/m4-05-docker-build-backend.txt); [`m4-05-docker-build-backend.png`](docs/evidence/m4-05-docker-build-backend.png) | Captured |
 | M5 | `.github/workflows/` | [`ci-cd.yml`](.github/workflows/ci-cd.yml), [`whoami.yml`](.github/workflows/whoami.yml) | In repo |
 | M5 | Actions run URL of a green pipeline | Run URL and [`m5-01-green-run.png`](docs/evidence/m5-01-green-run.png) (the push run whose deploy is green) | Captured |
-| M5 | GHCR package pages with SHA tags | `m5-03-ghcr-backend-tags.png`, `m5-04-ghcr-frontend-tags.png` | After GitHub |
+| M5 | GHCR package pages with SHA tags | [`m5-03-ghcr-backend-tags.png`](docs/evidence/m5-03-ghcr-backend-tags.png), [`m5-04-ghcr-frontend-tags.png`](docs/evidence/m5-04-ghcr-frontend-tags.png) | Captured |
 | M5 | (supporting) A failing test blocks the images (PR-A) | [`m5-02-pr-a-red.png`](docs/evidence/m5-02-pr-a-red.png) and the PR-A link | Captured |
 | M6 | Trivy scan step in the workflow | Step "Trivy gate (HIGH/CRITICAL, strict)" in [`ci-cd.yml`](.github/workflows/ci-cd.yml) | In repo |
 | M6 | Screenshot of the Trivy output from a pipeline run | [`m6-01-trivy-backend.png`](docs/evidence/m6-01-trivy-backend.png), [`m6-02-trivy-frontend.png`](docs/evidence/m6-02-trivy-frontend.png); the red gate [`m6-03-pr-b-red.png`](docs/evidence/m6-03-pr-b-red.png) | Captured |
