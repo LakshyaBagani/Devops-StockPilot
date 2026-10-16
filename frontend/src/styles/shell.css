@@ -1,0 +1,243 @@
+/* App shell: a light left rail with grouped destinations and a sticky top bar (from 640px); a slim
+   header plus the bottom tab bar on phones. Loaded last, after theme.css. */
+
+:root {
+  --rail-w: 0px;
+}
+
+.sp-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100dvh;
+}
+
+.sp-main {
+  flex: 1 0 auto;
+}
+
+/* --- phones: the rail and the top-bar extras are hidden --- */
+.sp-rail,
+.sp-header-crumb,
+.sp-header-record {
+  display: none;
+}
+
+/* --- the rail --- */
+.sp-rail {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  flex-direction: column;
+  height: 100dvh;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.sp-rail-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: var(--header-h);
+  padding: 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.sp-rail-head .sp-wordmark {
+  min-height: 0;
+  font-size: 15px;
+}
+
+.sp-rail-nav {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.sp-rail-section {
+  margin: 0;
+  padding: 14px 10px 6px;
+  color: var(--ink-4);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sp-rail-group:first-child .sp-rail-section {
+  padding-top: 6px;
+}
+
+.sp-rail-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sp-rail-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--r-sm);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.sp-rail-link .sp-icon {
+  flex: none;
+  color: var(--ink-3);
+  transition: color 0.15s;
+}
+
+@media (hover: hover) {
+  .sp-rail-link:hover {
+    background: var(--hover);
+    color: var(--ink);
+  }
+
+  .sp-rail-link:hover .sp-icon {
+    color: var(--ink-2);
+  }
+}
+
+.sp-rail-link[aria-current='page'],
+.sp-rail-link[aria-current='page']:hover {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.sp-rail-link[aria-current='page'] .sp-icon {
+  color: var(--accent);
+}
+
+/* --- tablets and up: rail + top bar --- */
+@media (min-width: 640px) {
+  :root {
+    --rail-w: 72px;
+  }
+
+  .sp-shell {
+    display: grid;
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+    grid-template-rows: none;
+    padding-bottom: 0;
+  }
+
+  .sp-rail {
+    display: flex;
+  }
+
+  /* Icons only: labels and section titles are hidden, the tooltip names each link. */
+  .sp-rail-head {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .sp-rail-label,
+  .sp-rail-section {
+    display: none;
+  }
+
+  .sp-rail-nav {
+    padding: 12px 10px;
+  }
+
+  .sp-rail-group + .sp-rail-group {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+
+  .sp-rail-link {
+    justify-content: center;
+    padding: 11px 0;
+  }
+
+  .sp-rail-head .sp-logo {
+    margin-right: 0;
+  }
+
+  /* The top bar: where you are on the left, the main action on the right. */
+  .sp-header .sp-nav,
+  .sp-header-wordmark {
+    display: none;
+  }
+
+  .sp-header-row {
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .sp-header-crumb {
+    display: block;
+    margin: 0;
+    overflow: hidden;
+    color: var(--ink-3);
+    font-size: var(--text-md);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .sp-header-crumb strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .sp-header-record {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sp-header-record .sp-icon {
+    color: var(--accent);
+  }
+}
+
+/* --- desktops: the full rail with labels and section titles --- */
+@media (min-width: 1024px) {
+  :root {
+    --rail-w: 240px;
+  }
+
+  .sp-rail-head {
+    justify-content: flex-start;
+    padding: 0 18px;
+  }
+
+  .sp-rail-label {
+    display: inline;
+  }
+
+  .sp-rail-section {
+    display: block;
+  }
+
+  .sp-rail-nav {
+    padding: 12px;
+  }
+
+  .sp-rail-group + .sp-rail-group {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .sp-rail-link {
+    justify-content: flex-start;
+    padding: 9px 10px;
+  }
+
+  .sp-rail-head .sp-logo {
+    margin-right: 10px;
+  }
+}
