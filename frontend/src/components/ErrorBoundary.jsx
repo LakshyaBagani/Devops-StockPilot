@@ -14,10 +14,10 @@ export class ErrorBoundary extends Component {
   render() {
     if (!this.state.error) return this.props.children
     return (
-      <div className="error-block" role="alert">
+      <div className="sp-error-state" role="alert">
         <h2>This screen crashed</h2>
         <p>The details are in the browser console. Reloading usually fixes it.</p>
-        <button type="button" className="btn" onClick={() => window.location.reload()}>
+        <button type="button" className="sp-btn" onClick={() => window.location.reload()}>
           Reload
         </button>
       </div>

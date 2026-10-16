@@ -1,0 +1,576 @@
+/*
+ * Planner: a scenario slip (service level, horizon, surge and Run simulation) above the plan.
+ * Each plan row leads with the product, its stock-out risk ± margin in plain words and the
+ * suggested order; the reorder point and the median stock-out day follow, quieter. The risk chart
+ * is an inline SVG: estimate dot, margin whiskers and the target rule on a 0–100% axis, with no
+ * solid fills.
+ *
+ * Mobile first. The plan stays as stacked rows below 1024px (six columns do not fit a tablet) and
+ * becomes the shared ruled table from there; the slip opens into one row at 1024px.
+ */
+
+/* --- the scenario slip --- */
+
+.sp-plan-form {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  border: var(--hairline) solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.sp-plan-controls {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* The slip spaces its groups itself. */
+.sp-plan-controls > .sp-field,
+.sp-plan-controls > .sp-segmented {
+  margin: 0;
+}
+
+/* "Service level 95% chance of not running out": the value reads into its meaning, and every
+   group is one label line over a 44px control, so the controls share a line when in a row. */
+.sp-plan-sl-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
+}
+
+.sp-plan-sl-value {
+  font-weight: 500;
+}
+
+/* Segments take their label's width, so a long preset ("Diwali rush +40%", added by the live
+   demo) is never clipped. */
+.sp-plan-controls .sp-segment {
+  flex: 1 1 auto;
+}
+
+/* The track wraps instead: on a narrow phone a long preset moves to a second line of the track
+   rather than squeezing every label. */
+.sp-plan-controls .sp-segmented-track {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 639px) {
+  .sp-plan-controls .sp-segment span {
+    padding-inline: var(--space-2);
+  }
+}
+
+.sp-plan-run {
+  width: 100%;
+}
+
+/* Phones, once a plan has arrived: the controls fold into "Scenario 95% · 30 d · no surge" beside
+   Run simulation, which never folds away. */
+.sp-plan-toggle {
+  display: grid;
+  grid-template-areas:
+    'label chevron'
+    'value chevron';
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-3);
+  min-height: var(--target);
+  margin: calc(-1 * var(--space-2));
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sp-plan-toggle-label {
+  grid-area: label;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.3;
+}
+
+.sp-plan-toggle-value {
+  grid-area: value;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.sp-plan-nowrap {
+  white-space: nowrap;
+}
+
+/* The chevron: down when folded, up when open (the shared disclosure's mark). */
+.sp-plan-toggle::after {
+  content: '';
+  grid-area: chevron;
+  width: 8px;
+  height: 8px;
+  margin-inline: 4px;
+  border-right: 2px solid var(--action);
+  border-bottom: 2px solid var(--action);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--dur-feedback) var(--ease-out);
+}
+
+.sp-plan-toggle[aria-expanded='true']::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+@media (hover: hover) {
+  .sp-plan-toggle:hover {
+    background: var(--paper-shift);
+  }
+}
+
+/* Tight enough that "95% · 30 d · no surge" stays on one line beside the button at 390px. */
+@media (max-width: 639px) {
+  .sp-plan-form[data-collapsed] {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  }
+
+  .sp-plan-form[data-collapsed] .sp-plan-toggle {
+    column-gap: var(--space-2);
+  }
+
+  /* Flush left for the text; nothing to the right, so its focus ring clears the button. */
+  .sp-plan-form[data-collapsed] .sp-plan-toggle {
+    margin-block: 0;
+    margin-right: 0;
+  }
+
+  .sp-plan-form[data-collapsed] .sp-plan-controls {
+    display: none;
+  }
+
+  .sp-plan-form[data-collapsed] .sp-plan-run {
+    width: auto;
+    padding-inline: var(--space-3);
+  }
+}
+
+/* Too narrow for the scenario and the button side by side: stack them. */
+@media (max-width: 379px) {
+  .sp-plan-form[data-collapsed] {
+    grid-template-columns: minmax(0, 1fr);
+    padding-right: var(--space-4);
+  }
+
+  .sp-plan-form[data-collapsed] .sp-plan-run {
+    width: 100%;
+    margin-bottom: var(--space-2);
+  }
+}
+
+/* From 640px the controls are always open: two rows on a tablet, one row from 1024px. */
+@media (min-width: 640px) {
+  .sp-plan-toggle {
+    display: none;
+  }
+
+  .sp-plan-form {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: var(--space-5);
+    padding: var(--space-4) var(--space-5) var(--space-5);
+  }
+
+  /* A wrapping row: whatever does not fit (a third surge preset) moves down a line. */
+  .sp-plan-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-4) var(--space-5);
+  }
+
+  .sp-plan-controls > .sp-segmented {
+    flex: none;
+  }
+
+  .sp-plan-sl {
+    flex: 1 1 100%;
+  }
+
+  /* As wide as "Run simulation" while it reads "Simulating…", so the controls beside it stay put. */
+  .sp-plan-run {
+    width: auto;
+    min-width: 9.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .sp-plan-form {
+    column-gap: var(--space-6);
+  }
+
+  .sp-plan-controls {
+    column-gap: var(--space-6);
+  }
+
+  .sp-plan-sl {
+    flex: 1 1 15rem;
+  }
+}
+
+/* --- status, errors, the plan's head --- */
+
+.sp-plan-status {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+}
+
+.sp-plan-error {
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.sp-plan-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+}
+
+.sp-plan-head > * {
+  margin: 0;
+}
+
+.sp-plan-summary {
+  max-width: 70ch;
+  margin: var(--space-2) 0 var(--space-1);
+}
+
+.sp-plan-notice {
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+.sp-plan-key {
+  max-width: 70ch;
+  margin: 0 0 var(--space-3);
+}
+
+/* --- the risk chart (RiskBar, RiskAxis): inset so a dot at 0% or 100% is never clipped --- */
+
+.sp-risk {
+  display: block;
+  width: calc(100% - 14px);
+  margin-inline: 7px;
+  overflow: visible;
+}
+
+.sp-risk-track,
+.sp-risk-tick {
+  stroke: var(--line);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.sp-risk-target {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+/* The ring around the dot, in the colour of whatever is behind the row. */
+.sp-risk-halo {
+  fill: var(--paper);
+}
+
+.sp-risk-range {
+  stroke: var(--sp-risk-color);
+  stroke-width: 2;
+}
+
+.sp-risk-dot {
+  fill: var(--sp-risk-color);
+}
+
+.sp-risk[data-verdict='misses'] {
+  --sp-risk-color: var(--danger);
+}
+
+.sp-risk[data-verdict='close'] {
+  --sp-risk-color: var(--warning);
+}
+
+.sp-risk[data-verdict='meets'] {
+  --sp-risk-color: var(--success);
+}
+
+.sp-risk[data-verdict='idle'] {
+  --sp-risk-color: var(--edge);
+}
+
+.sp-risk-axis text {
+  fill: var(--muted);
+  font-family: var(--font-num);
+  font-size: var(--text-xs);
+}
+
+.sp-risk-axis .sp-risk-axis-target {
+  fill: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.sp-risk-baseline {
+  stroke: var(--edge);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+/* Stacked rows have no table header, so the axis is labelled once above them. */
+.sp-plan-axis-stacked {
+  margin-bottom: var(--space-1);
+}
+
+/* --- plan rows --- */
+
+.sp-plan tbody th {
+  font-weight: 400;
+  text-align: left;
+}
+
+/* Balanced, so a wrapped name never leaves "g" or "70 g" alone on its second line. */
+.sp-plan-name {
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration-color: var(--line);
+  text-wrap: balance;
+}
+
+@media (hover: hover) {
+  .sp-plan-name:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+/* Room for the name link's focus ring above the SKU. */
+.sp-plan-product .sp-sku {
+  display: block;
+  margin-top: 3px;
+}
+
+.sp-plan-p {
+  font-weight: 500;
+}
+
+.sp-plan-margin {
+  margin-left: 0.4em;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* Coloured words, at text weight: the verdict qualifies the figure, the order is the action. */
+.sp-plan-verdict {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.sp-plan-quiet {
+  color: var(--muted);
+  font-family: var(--font-body);
+}
+
+.sp-plan-order {
+  font-weight: 500;
+}
+
+.sp-plan-rop,
+.sp-plan-median {
+  font-size: var(--text-sm);
+}
+
+.sp-plan-now {
+  color: var(--muted);
+}
+
+.sp-plan-rop .sp-icon {
+  margin-inline: 3px;
+  color: var(--muted);
+  vertical-align: -0.15em;
+}
+
+.sp-plan-raise {
+  font-weight: 500;
+}
+
+/* Below 1024px: product opposite its risk, the chart across the row, then order, reorder point
+   and median stock-out as three labelled columns that line up from row to row. */
+@media (max-width: 1023px) {
+  .sp-plan tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+  }
+
+  .sp-plan-product {
+    flex: 1 1 11rem;
+    min-width: 0;
+  }
+
+  .sp-plan-risk {
+    flex: none;
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .sp-plan-chart {
+    flex: 1 1 100%;
+    padding-block: 2px;
+  }
+
+  .sp-plan-order {
+    flex: 1 1 0;
+  }
+
+  .sp-plan-rop,
+  .sp-plan-median {
+    flex: 1.4 1 0;
+  }
+
+  .sp-table.sp-plan td.num {
+    text-align: left;
+  }
+}
+
+/* 640–1023px: the shared table turns into ruled table rows at 640px; keep the stacked rows. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .sp-table-scroll.sp-plan-scroll {
+    margin-inline: calc(-1 * var(--gutter));
+    overflow-x: visible;
+  }
+
+  .sp-table.sp-plan,
+  .sp-table.sp-plan tbody {
+    display: block;
+  }
+
+  .sp-table.sp-plan thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .sp-table.sp-plan tbody tr {
+    padding: var(--space-3) var(--gutter);
+    border-bottom: var(--hairline) solid var(--line);
+  }
+
+  .sp-table.sp-plan tbody :is(th, td) {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .sp-table.sp-plan td[data-label]::before {
+    content: attr(data-label);
+  }
+
+  @media (hover: hover) {
+    .sp-table.sp-plan tbody tr:hover > :is(th, td) {
+      background: none;
+    }
+
+    .sp-table.sp-plan tbody tr:hover {
+      background: var(--surface);
+    }
+  }
+}
+
+/* From 1024px: the ruled table. The chart column carries the axis key in its header, and each
+   chart sits on its row's first line, level with the risk figure. */
+@media (min-width: 1024px) {
+  .sp-plan-axis-stacked {
+    display: none;
+  }
+
+  .sp-plan thead th {
+    vertical-align: bottom;
+  }
+
+  .sp-plan-risk {
+    white-space: nowrap;
+  }
+
+  /* The name column takes what it needs rather than the table's spare width, which goes to the
+     chart and the figures instead. */
+  .sp-plan-product {
+    width: 24%;
+  }
+
+  .sp-plan-chart {
+    width: 30%;
+  }
+
+  .sp-plan td.sp-plan-chart .sp-risk {
+    display: inline-block;
+    vertical-align: -6px;
+  }
+
+  .sp-plan td.sp-plan-order,
+  .sp-plan td.sp-plan-rop {
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 640px) and (hover: hover) {
+  .sp-plan tbody tr:hover > th {
+    background: var(--surface);
+  }
+
+  .sp-plan tbody tr:hover .sp-risk-halo {
+    fill: var(--surface);
+  }
+}
+
+/* --- method, under the plan --- */
+
+.sp-plan-method {
+  max-width: 70ch;
+  margin-top: var(--space-4);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.sp-plan-method p {
+  margin: 0 0 var(--space-2);
+}
+
+/* Forced colours drop fills and strokes to system colours; the verdict words still carry state. */
+@media (forced-colors: active) {
+  .sp-risk-track,
+  .sp-risk-tick,
+  .sp-risk-baseline {
+    stroke: GrayText;
+  }
+
+  .sp-risk-target,
+  .sp-risk-range {
+    stroke: CanvasText;
+  }
+
+  .sp-risk-dot,
+  .sp-risk-axis text,
+  .sp-risk-axis .sp-risk-axis-target {
+    fill: CanvasText;
+  }
+
+  .sp-risk-halo {
+    fill: Canvas;
+  }
+}

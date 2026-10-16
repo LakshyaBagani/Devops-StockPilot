@@ -2,7 +2,10 @@
 // backend schema. The server stays the authority; these only catch typos before a round trip.
 
 import { CATEGORIES, LIMITS, UNITS } from '../config.js'
-import { paiseToRupeesText, rupeesToPaise } from './format.js'
+import { formatNumber, paiseToRupeesText, rupeesToPaise } from './format.js'
+
+// The form's fields in screen order, which is also the order focus takes to the first invalid one.
+export const FIELD_ORDER = ['name', 'sku', 'category', 'unit', 'unitCost', 'reorderPoint', 'leadTime']
 
 export const EMPTY_PRODUCT = {
   sku: '',
@@ -102,4 +105,12 @@ export function changedFields(product, payload) {
     if (key !== 'sku' && value !== null && value !== product[key]) patch[key] = value
   }
   return patch
+}
+
+// Why Delete is unavailable, or null when it is available. Movements are never deleted, so a
+// product with any history stays for the audit trail (the API answers 409 otherwise).
+export function deleteBlockedReason(movementsCount) {
+  if (!(movementsCount > 0)) return null
+  const noun = movementsCount === 1 ? 'movement' : 'movements'
+  return `Can’t delete: ${formatNumber(movementsCount)} ${noun} kept for audit`
 }

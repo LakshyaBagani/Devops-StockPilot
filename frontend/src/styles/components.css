@@ -1,277 +1,666 @@
 /*
- * Components. The look is a godown ledger: ruled paper, mono tabular numerals, condensed caps
- * labels, hi-vis primary actions, hazard tape, outlined stamps and 2–4 px radii.
- * Hard rules (reviewed in FE-12; scripts/guardrails.mjs enforces the names and words):
- *  1. No sidebar or drawer navigation.        6. No greeting header, avatar, promo card,
- *  2. No KPI/stat cards or card grids for        eyebrow labels or CI/build strip.
- *     numbers: text lines, cells, spec sheets. 7. No Inter, no grey-blue palette, no white
- *  3. No status-filter pills: bin chips.          12 px-radius cards with soft shadows.
- *  4. No activity feed.                         8. No banned class names.
- *  5. No centred modal: sheet + inline confirm. 9. Nothing from the course reference project.
+ * Shared primitives. New markup uses the sp-* names; each rule also carries the class it replaced
+ * (.btn, .field-label, .ledger-table …), so screens not yet migrated already render in this style.
+ *
+ * Hard rules (scripts/guardrails.mjs enforces the names and words):
+ *  1. No sidebar or drawer navigation.          5. No centred modal: the record sheet and
+ *  2. No stat cards or card grids for numbers:     inline confirms.
+ *     text lines, aligned cells, spec rows.     6. No greeting header, avatar or promo block.
+ *  3. No status pills: state is a 3px edge      7. Sentence case and normal tracking; colour
+ *     (.sp-mark, .sp-note) plus a plain word.      never identifies state on its own.
+ *  4. No activity feed.                         8. No banned class names; new ones use sp-*.
  */
 
-/* --- page heads --- */
+/* --- page head --- */
 
+.sp-page-head,
 .page-head {
+  display: grid;
+  gap: var(--space-1);
   margin-bottom: var(--space-4);
 }
 
+.sp-page-title,
 .page-title {
-  padding-bottom: var(--space-1);
-  border-bottom: 2px solid var(--ink);
-  font-size: var(--text-2xl);
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-size-adjust: none;
+  font-weight: 600;
+  line-height: 1.15;
 }
 
+/* One line under the title, never a paragraph of explanation. */
+.sp-lede,
 .page-lede {
   max-width: 62ch;
-  margin: var(--space-2) 0 0;
-  color: var(--ink-soft);
+  margin: 0;
+  color: var(--muted);
 }
 
+/* Title on the left, the page's one action on the right. */
+.sp-page-head-row,
 .page-head-actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
-  padding-bottom: var(--space-2);
-  border-bottom: 2px solid var(--ink);
+  gap: var(--space-3) var(--space-4);
 }
 
-.page-head-actions .page-title {
-  padding: 0;
-  border: 0;
+@media (min-width: 640px) {
+  .sp-page-head,
+  .page-head {
+    margin-bottom: var(--space-5);
+  }
 }
 
+/* --- section titles --- */
+
+.sp-section-title,
 .section-title {
-  margin: var(--space-5) 0 var(--space-2);
-  font-size: var(--text-md);
+  margin: var(--space-6) 0 var(--space-3);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.3;
 }
 
-/* --- buttons --- */
+/* A section title with something on its right (a count, a "Full ledger →" link). */
+.sp-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-6) 0 var(--space-3);
+}
 
+.sp-section-head > .sp-section-title {
+  margin: 0;
+}
+
+/* --- quiet text and figures --- */
+
+/* Secondary facts: 14px muted body text. */
+.sp-meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* A SKU under a product name: mono, small, muted. */
+.sp-sku {
+  color: var(--muted);
+  font-family: var(--font-num);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The unit after a figure: "44 box" is <span class="num">44</span><span class="sp-unit">box</span>. */
+.sp-unit {
+  margin-left: 0.3em;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.875em;
+  font-weight: 400;
+}
+
+/* The same in a fixed slot, so right-aligned figures line up whatever the unit (box, litre). */
+.sp-unit-slot {
+  display: inline-block;
+  width: 2.6em;
+  text-align: left;
+}
+
+/* Right-aligned figures: rupee arithmetic. */
+.sp-num-col,
+.num-col {
+  text-align: right;
+}
+
+/* A prominent quantity (a stock row's on-hand on phones); -lg for the product page's 36px. */
+.sp-figure,
+.sp-figure-lg {
+  font-family: var(--font-num);
+  font-size: var(--text-xl);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.sp-figure-lg {
+  font-size: 2.25rem;
+  font-size-adjust: none;
+}
+
+/* A state in plain words, coloured: "Reorder", "misses target", "In", "Out", "Adjust". */
+.sp-tone-warning,
+.sp-tone-danger,
+.sp-tone-success {
+  font-weight: 600;
+}
+
+.sp-tone-warning {
+  color: var(--warning);
+}
+
+.sp-tone-danger {
+  color: var(--danger);
+}
+
+.sp-tone-success {
+  color: var(--success);
+}
+
+/* --- buttons: solid green for the action, quiet text for everything else --- */
+
+.sp-btn,
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 44px;
+  min-height: var(--target);
   padding: 0 var(--space-4);
-  border: 2px solid var(--ink);
+  border: var(--hairline) solid var(--edge);
   border-radius: var(--r-sm);
-  background: transparent;
+  background: var(--surface);
   color: var(--ink);
-  cursor: pointer;
-  font-family: var(--font-label);
-  font-stretch: condensed;
-  font-size: var(--text-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  line-height: 1;
+  line-height: 1.2;
+  text-align: center;
   text-decoration: none;
-  text-transform: uppercase;
   white-space: nowrap;
+  cursor: pointer;
   transition:
-    background-color 120ms,
-    transform 60ms;
+    background-color var(--dur-feedback),
+    border-color var(--dur-feedback),
+    color var(--dur-feedback);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.btn:hover {
-  background: var(--track);
-}
-
-.btn:active {
+.sp-btn:active:not(:disabled),
+.btn:active:not(:disabled) {
   transform: translateY(1px);
 }
 
-.btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-  transform: none;
-}
-
-/* The one primary action on a screen. */
+/* The one action of a screen or row group: Record movement, Create product, Run simulation. */
+.sp-btn-action,
 .btn-hivis {
-  background: var(--hivis);
+  border-color: var(--action);
+  background: var(--action);
+  color: var(--surface);
 }
 
-.btn-hivis:hover {
-  background: var(--hivis-press);
+.sp-btn-action:active:not(:disabled),
+.btn-hivis:active:not(:disabled) {
+  border-color: var(--action-press);
+  background: var(--action-press);
 }
 
-.btn-quiet {
-  border-color: transparent;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
+/* The armed half of an inline confirm (Confirm delete, Confirm undo). */
+.sp-btn-danger,
 .btn-danger {
-  border-color: var(--out);
-  color: var(--out);
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
-.btn-danger:hover {
-  background: var(--danger-bg);
-}
-
+.sp-btn-small,
 .btn-small {
-  padding: 0 var(--space-3);
-  font-size: var(--text-xs);
+  padding-inline: var(--space-3);
+  font-size: var(--text-sm);
 }
 
+/* Text actions: Record on a row, Undo, Edit, Cancel. Still 44px tall for touch. */
+.sp-btn-quiet,
+.btn-quiet {
+  padding-inline: var(--space-2);
+  border-color: transparent;
+  background: transparent;
+  color: var(--action);
+}
+
+/* A quiet button that starts (or ends) a column: its text lines up with the text above it while
+   the hit area still reaches 8px past it. */
+.sp-btn-flush {
+  margin-inline: calc(-1 * var(--space-2));
+}
+
+/* A square button holding one icon (close, dismiss); give it an aria-label. */
+.sp-btn-icon {
+  width: var(--target);
+  padding: 0;
+}
+
+.sp-btn-block,
 .btn-block {
   width: 100%;
 }
 
-/* Precise pointers can take denser row buttons; touch keeps 44 px. */
 @media (pointer: fine) {
+  .sp-btn-small,
   .btn-small {
-    min-height: 32px;
+    min-height: 36px;
   }
 }
 
-.row-actions {
-  display: inline-flex;
+@media (hover: hover) {
+  .sp-btn:hover:not(:disabled),
+  .btn:hover:not(:disabled) {
+    background: var(--paper-shift);
+  }
+
+  .sp-btn-action:hover:not(:disabled),
+  .btn-hivis:hover:not(:disabled) {
+    border-color: var(--action-hover);
+    background: var(--action-hover);
+  }
+
+  .sp-btn-danger:hover:not(:disabled),
+  .btn-danger:hover:not(:disabled) {
+    border-color: #8a281f;
+    background: #8a281f;
+  }
+
+  .sp-btn-quiet:hover:not(:disabled),
+  .btn-quiet:hover:not(:disabled) {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+  }
+}
+
+/* Disabled: muted text on surface, never faded. */
+.sp-btn:disabled,
+.btn:disabled,
+.sp-btn[aria-disabled='true'] {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.sp-btn-quiet:disabled,
+.btn-quiet:disabled {
+  border-color: transparent;
+  background: transparent;
+}
+
+/* A row of buttons or text actions. */
+.sp-actions,
+.row-actions,
+.form-actions {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
 }
 
+/* ConfirmButton once armed: [Confirm …][Cancel] for five seconds. */
+.sp-confirm,
 .confirm-group {
   display: inline-flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-1);
 }
 
 /* --- fields --- */
 
+.sp-field,
 .field {
   display: grid;
   align-content: start;
-  gap: var(--space-1);
+  gap: 6px;
   min-width: 0;
   margin: 0 0 var(--space-4);
 }
 
+.sp-label,
 .field-label {
   color: var(--ink);
-  font-family: var(--font-label);
-  font-stretch: condensed;
-  font-size: var(--text-xs);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  line-height: 1.2;
-  text-transform: uppercase;
+  line-height: 1.3;
 }
 
+.sp-label output,
 .field-label output {
   margin-left: var(--space-2);
   font-size: var(--text-md);
-  letter-spacing: 0;
 }
 
+.sp-optional,
 .field-optional {
-  color: var(--ink-soft);
+  color: var(--muted);
   font-weight: 400;
-  text-transform: none;
 }
 
-input[type='text'],
-input[type='search'],
+.sp-hint,
+.field-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.sp-error,
+.field-error {
+  margin: var(--space-1) 0 0;
+  color: var(--danger);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.sp-input,
+input:is([type='text'], [type='search'], [type='number'], [type='email'], [type='tel'], [type='url'], :not([type])),
 select,
 textarea {
   width: 100%;
-  min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-  border: 2px solid var(--ink-soft);
+  min-height: var(--target);
+  padding: 9px var(--space-3);
+  border: var(--hairline) solid var(--edge);
   border-radius: var(--r-sm);
-  background: var(--paper-raised);
+  background: var(--surface);
   color: var(--ink);
+  line-height: 1.4;
+  transition: border-color var(--dur-feedback);
+}
+
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 
 textarea {
+  min-height: 5rem;
   resize: vertical;
 }
 
-input[aria-invalid='true'],
-select[aria-invalid='true'] {
-  border-color: var(--out);
+select {
+  padding-right: 40px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23205B46' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  cursor: pointer;
 }
 
-.field-hint {
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: var(--text-sm);
+@media (hover: hover) {
+  :is(.sp-input, input:is([type='text'], [type='search'], :not([type])), select, textarea):hover:not(
+      :disabled,
+      :focus,
+      [aria-invalid='true']
+    ) {
+    border-color: var(--ink);
+  }
 }
 
-.field-error {
-  margin: var(--space-1) 0 0;
-  color: var(--out);
-  font-size: var(--text-sm);
-  font-weight: 600;
+/* Invalid: a danger border and edge, plus the error text the field points at. */
+:is(.sp-input, input, select, textarea)[aria-invalid='true'] {
+  border-color: var(--danger);
+  box-shadow: inset var(--mark) 0 0 var(--danger);
 }
 
-.hint-warn {
-  margin: 0 0 var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-left: 4px solid var(--cover-amber);
-  background: var(--warn-bg);
-  font-size: var(--text-sm);
+:is(.sp-input, input, select, textarea)[aria-invalid='true']:focus-visible {
+  box-shadow:
+    inset var(--mark) 0 0 var(--danger),
+    0 0 0 2px var(--surface);
+}
+
+.sp-input:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  border-color: var(--line);
+  background: var(--paper);
+  color: var(--muted);
 }
 
 input[type='range'] {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--target);
   margin: 0;
-  accent-color: var(--ink);
+  accent-color: var(--action);
 }
 
-/* --- bin-label chips --- */
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--action);
+}
 
+/* A search box with its magnifier inside: <span class="sp-search"><Icon name="search" /><input type="search" /></span>. */
+.sp-search,
+.search-box {
+  position: relative;
+  display: block;
+}
+
+.sp-search > .sp-icon,
+.search-box > .sp-icon {
+  position: absolute;
+  top: 50%;
+  left: var(--space-3);
+  color: var(--muted);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.sp-search > input,
+.search-box > input {
+  padding-left: 40px;
+}
+
+/* Paired fields on wider screens, one column on phones. */
+.sp-field-pair,
+.sp-field-trio,
+.form-pair,
+.form-trio {
+  display: grid;
+  gap: 0 var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .sp-field-pair,
+  .form-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sp-field-trio,
+  .form-trio {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* --- state edges: a 3px mark plus words, never a pill --- */
+
+/* A message with a state edge: "Only 11 pcs on hand", "Simulation failed". */
+.sp-note,
+.hint-warn {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-left: var(--mark) solid var(--sp-note-edge, var(--edge));
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.sp-note-warning,
+.hint-warn {
+  --sp-note-edge: var(--warning);
+}
+
+.sp-note-danger {
+  --sp-note-edge: var(--danger);
+}
+
+.sp-note-success {
+  --sp-note-edge: var(--success);
+}
+
+.sp-note-info {
+  --sp-note-edge: var(--action);
+}
+
+/*
+ * A state edge on the left of a row, hanging in the gutter beside the text: a product at or below
+ * its reorder point gets one, plus the plain word "Reorder" in --warning.
+ *   <tr class="sp-mark-row">  on a table row: drawn on the stacked row on phones, on the first
+ *                             cell from 640px (table rows cannot anchor it reliably);
+ *   <li class="sp-mark">      on any other block, which needs ≥ 12px of left padding.
+ * Colour: add .sp-mark-warning (default), .sp-mark-danger or .sp-mark-success.
+ */
+.sp-mark,
+.sp-mark-row {
+  position: relative;
+}
+
+.sp-mark::before,
+.sp-mark-row::before {
+  content: '';
+  position: absolute;
+  inset-block: var(--space-2);
+  left: 0;
+  width: var(--mark);
+  border-radius: 2px;
+  background: var(--sp-mark-color, var(--warning));
+}
+
+@media (min-width: 640px) {
+  :is(.sp-table, .ledger-table) tr.sp-mark-row {
+    position: static;
+  }
+
+  :is(.sp-table, .ledger-table) tr.sp-mark-row::before {
+    content: none;
+  }
+
+  :is(.sp-table, .ledger-table) tr.sp-mark-row > :first-child {
+    position: relative;
+  }
+
+  :is(.sp-table, .ledger-table) tr.sp-mark-row > :first-child::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--space-2);
+    left: 0;
+    width: var(--mark);
+    border-radius: 2px;
+    background: var(--sp-mark-color, var(--warning));
+  }
+}
+
+.sp-mark-warning {
+  --sp-mark-color: var(--warning);
+}
+
+.sp-mark-danger {
+  --sp-mark-color: var(--danger);
+}
+
+.sp-mark-success {
+  --sp-mark-color: var(--success);
+}
+
+/* --- rectangular chips (filters and presets): 3px corners, never pills --- */
+
+.sp-chips,
 .chip-row {
   display: flex;
   gap: var(--space-2);
   min-width: 0;
-  padding: 2px 2px var(--space-1);
+  margin: 0;
+  padding: 5px 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
 
+.sp-chips::-webkit-scrollbar,
+.chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.sp-chip,
 .bin-chip {
-  flex: 0 0 auto;
-  min-height: 40px;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: 36px;
   padding: 0 var(--space-3);
-  border: 2px solid var(--ink);
+  border: var(--hairline) solid var(--edge);
   border-radius: var(--r-sm);
-  background: var(--paper-raised);
+  background: var(--surface);
   color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.2;
+  white-space: nowrap;
   cursor: pointer;
-  font-family: var(--font-num);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.06em;
   scroll-snap-align: start;
-  text-transform: uppercase;
+  transition:
+    background-color var(--dur-feedback),
+    border-color var(--dur-feedback),
+    color var(--dur-feedback);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.bin-chip:hover {
-  background: var(--track);
-}
-
+.sp-chip[aria-pressed='true'],
 .bin-chip[aria-pressed='true'] {
-  background: var(--ink);
-  color: var(--paper);
+  border-color: var(--action);
+  background: var(--action);
+  color: var(--surface);
 }
 
-@media (pointer: coarse) {
-  .bin-chip {
-    min-height: 44px;
+@media (hover: hover) {
+  .sp-chip:hover:not([aria-pressed='true'], :disabled),
+  .bin-chip:hover:not([aria-pressed='true'], :disabled) {
+    background: var(--paper-shift);
   }
 }
 
-/* --- segmented radios --- */
+@media (pointer: coarse) {
+  .sp-chip,
+  .bin-chip {
+    min-height: var(--target);
+  }
+}
 
+/* Phones: one row that scrolls sideways and runs to the screen edges. */
+@media (max-width: 639px) {
+  .sp-chips,
+  .chip-row {
+    margin-inline: calc(-1 * var(--gutter));
+    padding-inline: var(--gutter);
+    scroll-padding-inline: var(--gutter);
+  }
+}
+
+@media (min-width: 640px) {
+  .sp-chips,
+  .chip-row {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}
+
+/* --- segmented control: native radios in one track, the choice filled green --- */
+
+.sp-fieldset,
+.sp-segmented,
 .segmented,
 .surge {
   min-width: 0;
@@ -280,204 +669,121 @@ input[type='range'] {
   border: 0;
 }
 
-.segmented legend,
-.surge legend {
-  margin-bottom: var(--space-1);
+.sp-fieldset > legend,
+.sp-segmented > legend,
+.segmented > legend,
+.surge > legend {
+  margin-bottom: 6px;
   padding: 0;
 }
 
+.sp-segmented-track,
 .segmented-track {
   display: flex;
   overflow: hidden;
-  border: 2px solid var(--ink);
-  border-radius: var(--r-sm);
-  background: var(--paper-raised);
+  border: var(--hairline) solid var(--edge);
+  border-radius: var(--r-md);
+  background: var(--surface);
 }
 
+/* One tab stop for the group, so one ring around the whole track. */
+.sp-segmented-track:has(input:focus-visible),
+.segmented-track:has(input:focus-visible) {
+  outline: 3px solid var(--action);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+/* The whole label is the hit area (44px with the track's border); the choice is inset 3px. */
+.sp-segment,
 .segment {
   position: relative;
+  display: flex;
   flex: 1 1 0;
+  min-width: 0;
+  padding: 3px;
 }
 
-.segment + .segment {
-  border-left: 2px solid var(--ink);
-}
-
+.sp-segment input,
 .segment input {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   margin: 0;
   opacity: 0;
   cursor: pointer;
 }
 
+.sp-segment span,
 .segment span {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: calc(var(--target) - 8px);
   padding: 0 var(--space-3);
-  font-family: var(--font-num);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.segment input:checked + span {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.segment input:focus-visible + span {
-  outline: 3px solid var(--focus);
-  outline-offset: -5px;
-}
-
-.segmented .field-hint {
-  margin-top: var(--space-1);
-}
-
-/* --- quantity stepper --- */
-
-.stepper {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) 52px;
-}
-
-.stepper input {
-  border-width: 2px 0;
-  border-color: var(--ink);
-  border-radius: 0;
-  font-size: 1.25rem;
-  text-align: center;
-}
-
-.stepper input[aria-invalid='true'] {
-  border-color: var(--out);
-}
-
-.stepper-btn {
-  min-height: 52px;
-  padding: 0;
-}
-
-.stepper-btn:first-child {
-  border-radius: var(--r-sm) 0 0 var(--r-sm);
-}
-
-.stepper-btn:last-child {
-  border-radius: 0 var(--r-sm) var(--r-sm) 0;
-}
-
-/* --- summary line (text chips, never cards) --- */
-
-.summary-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-2);
-  margin: var(--space-3) 0 var(--space-1);
-}
-
-.summary-chip {
-  white-space: nowrap;
-}
-
-.summary-chip .num {
-  font-weight: 600;
-}
-
-.summary-sep {
-  color: var(--ink-faint);
-}
-
-.summary-toggle {
-  min-height: 36px;
-  padding: 0 var(--space-2);
-  border: 2px solid var(--ink);
   border-radius: var(--r-sm);
-  background: var(--warn-bg);
-  cursor: pointer;
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-feedback),
+    color var(--dur-feedback);
 }
 
-.summary-toggle[aria-pressed='true'] {
-  background: var(--ink);
-  color: var(--paper);
+.sp-segment input:checked + span,
+.segment input:checked + span {
+  background: var(--action);
+  color: var(--surface);
 }
 
-@media (pointer: coarse) {
-  .summary-toggle {
-    min-height: 44px;
+@media (hover: hover) {
+  .sp-segment:hover input:not(:checked) + span,
+  .segment:hover input:not(:checked) + span {
+    background: var(--paper-shift);
   }
 }
 
-.summary-sub {
-  margin: 0 0 var(--space-3);
-  color: var(--ink-soft);
-  font-size: var(--text-sm);
+.sp-segmented .sp-hint,
+.segmented .field-hint {
+  margin-top: 6px;
 }
 
-/* --- stock tools --- */
+/* --- tables: unboxed. Stacked rows on phones, ruled rows from 640px --- */
 
-.stock-tools {
-  display: grid;
-  gap: var(--space-3);
-  min-width: 0;
-  margin: var(--space-3) 0 var(--space-4);
-}
-
-.search-field {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.search-box {
-  position: relative;
-  display: block;
-}
-
-.search-box .icon {
-  position: absolute;
-  top: 50%;
-  left: var(--space-3);
-  color: var(--ink-soft);
-  pointer-events: none;
-  transform: translateY(-50%);
-}
-
-.search-box input {
-  padding-left: 40px;
-}
-
-@media (min-width: 640px) {
-  .stock-tools {
-    grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
-    align-items: end;
-  }
-}
-
-/* --- ledger tables: ruled rows ≥ 640 px, stacked entries below --- */
-
-/* Positioned, so absolutely positioned descendants (visually hidden labels) are clipped by this
-   box instead of widening the page. */
+/*
+ * The scroller reaches into the gutters: on phones to the screen edges, so row rules run edge to
+ * edge; from 640px by 12px, so hover bands and .sp-mark edges hang just outside the text column.
+ * Either way the text itself lines up with the page title. It is positioned, so visually hidden
+ * labels inside it are clipped instead of widening the page.
+ */
+.sp-table-scroll,
 .table-scroll {
   position: relative;
   min-width: 0;
-  transition: opacity 150ms;
+  margin-inline: calc(-1 * var(--gutter));
+  transition: opacity var(--dur-feedback);
 }
 
+.sp-table-scroll[data-refreshing],
 .table-scroll[data-refreshing] {
-  opacity: 0.55;
+  opacity: 0.6;
 }
 
+.sp-table,
 .ledger-table {
   display: block;
   width: 100%;
-  border-collapse: collapse;
 }
 
+.sp-table caption,
+.ledger-table caption {
+  text-align: left;
+}
+
+.sp-table thead,
 .ledger-table thead {
   position: absolute;
   width: 1px;
@@ -486,218 +792,69 @@ input[type='range'] {
   clip-path: inset(50%);
 }
 
+.sp-table tbody,
 .ledger-table tbody {
   display: block;
 }
 
+/* A stacked row: each page lays its cells out with grid-template-areas in its own stylesheet. */
+.sp-table tr,
 .ledger-table tr {
   display: grid;
   gap: var(--space-1) var(--space-3);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--rule);
+  padding: var(--space-3) var(--gutter);
+  border-bottom: var(--hairline) solid var(--line);
 }
 
+.sp-table td,
 .ledger-table td {
   display: block;
   min-width: 0;
 }
 
+/* Small labels for stacked cells that need one (data-label="Value"). */
+.sp-table td[data-label]::before,
 .ledger-table td[data-label]::before {
   content: attr(data-label);
   display: block;
-  color: var(--ink-soft);
-  font-family: var(--font-label);
-  font-stretch: condensed;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  line-height: 1.4;
-  text-transform: uppercase;
-}
-
-.c-name {
-  font-weight: 600;
-}
-
-.c-category {
-  display: block;
-  color: var(--ink-soft);
-  font-family: var(--font-label);
-  font-stretch: condensed;
-  font-size: var(--text-xs);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.c-sku-inline {
-  color: var(--ink-soft);
-  font-size: var(--text-xs);
-}
-
-.c-unit {
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
   font-weight: 400;
+  line-height: 1.3;
 }
 
-.stock-table tr {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-  grid-template-areas:
-    'sku sku action'
-    'product product action'
-    'onhand value value'
-    'cover cover cover';
+/* A group heading row inside a table body: "Yesterday", "Wed, 14 Oct". */
+.sp-table .sp-group-row,
+.ledger-table .day-row {
+  display: block;
+  padding: var(--space-5) var(--gutter) var(--space-2);
+  border-bottom: var(--hairline) solid var(--edge);
 }
 
-.stock-table .c-sku {
-  grid-area: sku;
-  color: var(--ink-soft);
-  font-size: var(--text-xs);
-}
-
-.stock-table .c-product {
-  grid-area: product;
-}
-
-.stock-table .c-onhand {
-  grid-area: onhand;
-}
-
-.stock-table .c-value {
-  grid-area: value;
-}
-
-.stock-table .c-cover {
-  grid-area: cover;
-}
-
-.stock-table .c-action {
-  grid-area: action;
-  align-self: start;
-}
-
-.movement-table tr:not(.day-row) {
-  grid-template-columns: auto auto minmax(0, 1fr);
-  grid-template-areas:
-    'time kind delta'
-    'product product product'
-    'note note note'
-    'action action action';
-  align-items: center;
-}
-
-.movement-table .c-time {
-  grid-area: time;
-}
-
-.movement-table .c-kind {
-  grid-area: kind;
-}
-
-.movement-table .c-delta {
-  grid-area: delta;
+.sp-group-row th,
+.day-row th {
+  display: block;
+  color: var(--ink);
+  font-size: var(--text-sm);
   font-weight: 600;
-  text-align: right;
-}
-
-.movement-table .c-product {
-  grid-area: product;
-}
-
-.movement-table .c-note {
-  grid-area: note;
-  color: var(--ink-soft);
-  font-size: var(--text-sm);
-}
-
-.movement-table .c-note:empty {
-  display: none;
-}
-
-.movement-table .c-action {
-  grid-area: action;
-}
-
-.day-row {
-  display: block;
-  padding: var(--space-4) 0 var(--space-1);
-  border-bottom: 2px solid var(--ink);
-}
-
-.ledger-table .day-row th {
-  display: block;
-  font-family: var(--font-label);
-  font-stretch: condensed;
-  font-size: var(--text-sm);
-  letter-spacing: 0.08em;
   text-align: left;
-  text-transform: uppercase;
-}
-
-.plan-table tr {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-areas:
-    'product product'
-    'risk risk'
-    'rop order'
-    'stockout stockout';
-}
-
-.plan-table .c-product {
-  grid-area: product;
-}
-
-.plan-table .c-risk {
-  grid-area: risk;
-}
-
-.plan-table .c-rop {
-  grid-area: rop;
-}
-
-.plan-table .c-order {
-  grid-area: order;
-}
-
-.plan-table .c-stockout {
-  grid-area: stockout;
-}
-
-.products-table tr {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.products-table .c-sku,
-.products-table .c-product,
-.products-table .c-action {
-  grid-column: 1 / -1;
-}
-
-.products-table .c-sku {
-  color: var(--ink-soft);
-  font-size: var(--text-xs);
-}
-
-.delete-hint {
-  margin: var(--space-1) 0 0;
-  color: var(--ink-soft);
-  font-size: var(--text-xs);
-}
-
-.load-older {
-  margin-top: var(--space-4);
 }
 
 @media (min-width: 640px) {
   /* Wide rows scroll inside their own box, never the page. */
+  .sp-table-scroll,
   .table-scroll {
+    margin-inline: calc(-1 * var(--space-3));
     overflow-x: auto;
   }
 
+  .sp-table,
   .ledger-table {
     display: table;
-    border: 2px solid var(--ink);
-    background: var(--paper-raised);
   }
 
+  .sp-table thead,
   .ledger-table thead {
     position: static;
     display: table-header-group;
@@ -707,115 +864,80 @@ input[type='range'] {
     clip-path: none;
   }
 
+  .sp-table tbody,
   .ledger-table tbody {
     display: table-row-group;
   }
 
+  .sp-table tr,
   .ledger-table tr,
-  .ledger-table tr:not(.day-row) {
+  .sp-table .sp-group-row,
+  .ledger-table .day-row {
     display: table-row;
     padding: 0;
     border: 0;
   }
 
+  .sp-table th,
+  .sp-table td,
   .ledger-table th,
   .ledger-table td,
+  .sp-table .sp-group-row th,
   .ledger-table .day-row th {
     display: table-cell;
-    padding: var(--space-2) var(--space-3);
-    border-bottom: 1px solid var(--rule);
+    padding: var(--space-3);
+    border-bottom: var(--hairline) solid var(--line);
     text-align: left;
-    vertical-align: middle;
+    vertical-align: baseline;
   }
 
+  .sp-table thead th,
   .ledger-table thead th {
-    border-bottom: 2px solid var(--ink);
+    padding-block: var(--space-2);
+    border-bottom-color: var(--ink);
     background: var(--paper);
-    font-family: var(--font-label);
-    font-stretch: condensed;
-    font-size: var(--text-xs);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: 400;
+    line-height: 1.3;
     white-space: nowrap;
   }
 
+  .sp-table td[data-label]::before,
   .ledger-table td[data-label]::before {
     content: none;
   }
 
+  .sp-table .sp-num-col,
+  .sp-table td.num,
   .ledger-table .num-col,
   .ledger-table td.num {
     text-align: right;
   }
 
-  .ledger-table td.c-sku {
-    text-align: left;
-  }
-
-  /* Cards hide an empty note; a table row needs every cell. */
-  .movement-table .c-note:empty {
-    display: table-cell;
-  }
-
-  .ledger-table tbody tr:hover > td {
-    background: rgb(255 194 26 / 0.12);
-  }
-
+  .sp-table .sp-group-row th,
   .ledger-table .day-row th {
-    padding-top: var(--space-3);
-    border-bottom: 2px solid var(--ink);
+    padding-top: var(--space-5);
+    border-bottom-color: var(--edge);
     background: var(--paper);
   }
 
-  .stock-table .c-sku,
-  .products-table .c-sku {
-    font-size: var(--text-sm);
-    white-space: nowrap;
-  }
-
-  .stock-table .c-cover {
-    width: 32%;
-  }
-
-  .stock-table .c-action,
-  .movement-table .c-action,
-  .products-table .c-action {
-    text-align: right;
-    white-space: nowrap;
-  }
-
-  /* The guard hint wraps under the buttons instead of widening the column. */
-  .products-table .delete-hint {
-    max-width: 12rem;
-    margin-left: auto;
-    white-space: normal;
-  }
-
-  .movement-table .c-time {
-    width: 4.5rem;
-  }
-
-  .movement-table .c-delta {
-    white-space: nowrap;
-  }
-
-  .plan-table .c-risk {
-    width: 34%;
-  }
-
-  .plan-table .c-rop,
-  .plan-table .c-order {
-    white-space: nowrap;
+  @media (hover: hover) {
+    .sp-table tbody tr:not(.sp-group-row):hover > td,
+    .ledger-table tbody tr:not(.day-row):hover > td {
+      background: var(--surface);
+    }
   }
 }
 
 @media (min-width: 1024px) {
   /* Tables fit from here, so the page scrolls them and the header row can stick. */
+  .sp-table-scroll,
   .table-scroll {
     overflow-x: visible;
   }
 
+  .sp-table thead th,
   .ledger-table thead th {
     position: sticky;
     top: 0;
@@ -823,243 +945,307 @@ input[type='range'] {
   }
 }
 
-/* --- days-of-cover bar --- */
+/* --- disclosure: <details class="sp-disclosure"><summary>Stock summary</summary>…</details> --- */
 
-.cover {
-  display: flex;
+.sp-disclosure {
+  border-block: var(--hairline) solid var(--line);
+}
+
+.sp-disclosure > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
+  gap: var(--space-3);
+  min-height: var(--target);
+  padding-block: var(--space-1);
+  color: var(--ink);
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
 }
 
-.cover-track {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: 80px;
-  height: 12px;
-  overflow: hidden;
-  border-radius: var(--r-sm);
-  outline: 1px solid var(--ink-soft);
-  outline-offset: -1px;
-  background: var(--track);
+.sp-disclosure > summary::-webkit-details-marker {
+  display: none;
 }
 
-/* Ticks at the lead time (1/3) and twice the lead time (2/3), drawn above the fill. */
-.cover-track::after {
+/* The chevron: down when closed, up when open. */
+.sp-disclosure > summary::after {
   content: '';
-  position: absolute;
-  inset: 0;
-  background-image: linear-gradient(
-    to right,
-    transparent calc(100% / 3 - 1px),
-    var(--ink-soft) calc(100% / 3 - 1px) calc(100% / 3 + 1px),
-    transparent calc(100% / 3 + 1px) calc(200% / 3 - 1px),
-    var(--ink-soft) calc(200% / 3 - 1px) calc(200% / 3 + 1px),
-    transparent calc(200% / 3 + 1px)
-  );
+  width: 8px;
+  height: 8px;
+  margin-inline: 4px;
+  border-right: 2px solid var(--action);
+  border-bottom: 2px solid var(--action);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--dur-feedback) var(--ease-out);
 }
 
-.cover-track[data-level='none'] {
-  background: repeating-linear-gradient(-45deg, rgb(122 115 102 / 0.4) 0 2px, transparent 2px 6px), var(--track);
+.sp-disclosure[open] > summary::after {
+  transform: translateY(2px) rotate(-135deg);
 }
 
-.cover-fill {
-  position: absolute;
-  inset: 0;
-  background-color: var(--cover-green);
-  transform: scaleX(var(--fill));
-  transform-origin: left;
+/* Optional quiet text on the summary's right: "95% · 30 d · no surge". */
+.sp-disclosure-meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 400;
 }
 
-.cover-fill[data-level='amber'] {
-  background-color: var(--cover-amber);
+.sp-disclosure-body {
+  padding-bottom: var(--space-3);
 }
 
-/* Red also gets hatching, so the state never depends on colour alone. */
-.cover-fill[data-level='red'] {
-  background-color: var(--cover-red);
-  background-image: repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.35) 0 3px, transparent 3px 7px);
-}
-
-.cover-fill[data-animated] {
-  animation: cover-grow var(--dur-bar) var(--ease-out) both;
-  animation-delay: calc(var(--i) * 25ms);
-}
-
-@keyframes cover-grow {
-  from {
-    transform: scaleX(0);
+@media (hover: hover) {
+  .sp-disclosure > summary:hover {
+    color: var(--action);
   }
 }
 
-/* Fixed label widths keep every track the same length, so bars compare across rows. */
-.cover-label {
-  flex: 0 0 9ch;
-  font-size: var(--text-sm);
-  text-align: right;
-  white-space: nowrap;
+/* --- status views --- */
+
+/* A screen tall, so the footer stays below the fold until the rows arrive (no layout shift). */
+.sp-skeleton,
+.skeleton {
+  display: grid;
+  align-content: start;
+  min-height: 100dvh;
+  margin-top: var(--space-2);
 }
 
-/* --- planner risk bar --- */
+.sp-skeleton-row,
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: 56px;
+  border-bottom: var(--hairline) solid var(--line);
+}
 
-.risk {
+.sp-skeleton-row::before,
+.sp-skeleton-row::after,
+.skeleton-row::before,
+.skeleton-row::after {
+  content: '';
+  height: 10px;
+  border-radius: 2px;
+  background: var(--paper-shift);
+  animation: sp-pulse 1.2s ease-in-out infinite alternate;
+}
+
+.sp-skeleton-row::before,
+.skeleton-row::before {
+  width: min(42%, 300px);
+}
+
+.sp-skeleton-row::after,
+.skeleton-row::after {
+  width: min(16%, 96px);
+}
+
+.sp-skeleton-row:nth-child(3n + 2)::before,
+.skeleton-row:nth-child(3n + 2)::before {
+  width: min(30%, 220px);
+}
+
+.sp-skeleton-row:nth-child(3n)::before,
+.skeleton-row:nth-child(3n)::before {
+  width: min(52%, 340px);
+}
+
+@keyframes sp-pulse {
+  to {
+    opacity: 0.4;
+  }
+}
+
+/* Nothing to show yet: an open block on a neutral edge. */
+.sp-empty,
+.empty-block,
+.sp-error-state,
+.error-block {
+  max-width: 40rem;
+  margin: var(--space-4) 0;
+  padding: var(--space-2) 0 var(--space-2) var(--space-4);
+  border-left: var(--mark) solid var(--line);
+}
+
+.sp-error-state,
+.error-block {
+  border-left-color: var(--danger);
+}
+
+.sp-empty h2,
+.empty-block h2,
+.sp-error-state h2,
+.error-block h2 {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-lg);
+}
+
+.sp-empty p,
+.empty-block p,
+.sp-error-state p,
+.error-block p {
+  max-width: 60ch;
+  color: var(--muted);
+}
+
+.sp-empty-action {
+  margin-top: var(--space-4);
+}
+
+/* --- API-down banner (under the header) --- */
+
+.sp-api-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border: var(--hairline) solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: inset var(--mark) 0 0 var(--warning);
+}
+
+.sp-api-banner > .sp-icon {
+  color: var(--warning);
+}
+
+.sp-api-banner p {
+  flex: 1 1 14rem;
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* --- toasts: a printed receipt line. Above the tab bar on phones, top right from 640px --- */
+
+.sp-toasts {
+  position: fixed;
+  right: var(--gutter);
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--space-3));
+  left: var(--gutter);
+  z-index: 30;
+  display: grid;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.sp-toast {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.risk-track {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: 96px;
-  height: 14px;
-  outline: 1px solid var(--ink-soft);
-  outline-offset: -1px;
-  background: var(--track);
-}
-
-.risk-band {
-  position: absolute;
-  inset: 0 auto;
-  left: calc(var(--low) * 100%);
-  width: calc((var(--high) - var(--low)) * 100%);
-  background: rgb(29 27 22 / 0.2);
-}
-
-.risk-fill {
-  position: absolute;
-  top: 3px;
-  bottom: 3px;
-  left: 0;
-  width: calc(var(--p) * 100%);
-  min-width: 2px;
-  background: var(--cover-green);
-}
-
-.risk-fill[data-level='amber'] {
-  background: var(--cover-amber);
-}
-
-.risk-fill[data-level='red'] {
-  background: var(--cover-red);
-}
-
-.risk-target {
-  position: absolute;
-  top: -4px;
-  bottom: -4px;
-  left: calc(var(--t) * 100%);
-  width: 2px;
+  min-height: 52px;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+  border-radius: var(--r-md);
   background: var(--ink);
+  box-shadow: inset var(--mark) 0 0 var(--brand);
+  color: var(--surface);
+  pointer-events: auto;
+  animation: sp-toast-in var(--dur-sheet) var(--ease-out);
 }
 
-.risk-text {
-  flex: 0 0 12ch;
-  font-size: var(--text-sm);
-  text-align: right;
-  white-space: nowrap;
+/* Errors are unmistakable: surface text on danger (6.92). */
+.sp-toast[data-tone='error'] {
+  background: var(--danger);
+  box-shadow: none;
 }
 
-/* --- stamps and tags --- */
-
-.stamp {
-  display: inline-block;
-  padding: 1px 6px;
-  border: 2px solid currentColor;
-  border-radius: var(--r-sm);
-  font-family: var(--font-num);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  line-height: 1.3;
+.sp-toast-icon {
+  flex: none;
+  color: var(--brand);
 }
 
-.stamp[data-kind='IN'],
-.c-delta[data-kind='IN'] {
-  color: var(--in);
+.sp-toast[data-tone='error'] .sp-toast-icon {
+  color: var(--surface);
 }
 
-.stamp[data-kind='OUT'],
-.c-delta[data-kind='OUT'] {
-  color: var(--out);
-}
-
-.stamp[data-kind='ADJUST'],
-.c-delta[data-kind='ADJUST'] {
-  color: var(--adj);
-}
-
-/* Hazard tape on the left, the word in paper on ink. */
-.tag-reorder {
-  display: inline-block;
-  margin-left: var(--space-2);
-  padding: 1px 6px 1px 16px;
-  border-radius: var(--r-sm);
-  background:
-    var(--hazard) left / 10px 100% no-repeat,
-    var(--ink);
-  color: var(--paper);
-  font-family: var(--font-num);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  line-height: 1.4;
-  text-transform: uppercase;
-  vertical-align: 0.1em;
-}
-
-/* --- spec sheet: dl rows with dotted leaders --- */
-
-.spec-sheet {
-  margin: 0;
-}
-
-.spec-row {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--rule-faint);
-}
-
-.spec-row dt {
-  display: flex;
+.sp-toast-text {
   flex: 1 1 auto;
-  align-items: baseline;
   min-width: 0;
-  color: var(--ink-soft);
-  font-family: var(--font-label);
-  font-stretch: condensed;
-  font-size: var(--text-xs);
+  margin: 0;
+  padding-block: var(--space-2);
+  line-height: 1.35;
+}
+
+.sp-toast-action,
+.sp-toast-close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border-radius: var(--r-sm);
+  color: var(--surface);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sp-toast-action {
+  padding: 0 var(--space-3);
+  border: var(--hairline) solid rgb(255 254 249 / 60%);
+  background: transparent;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
-.spec-row dt::after {
-  content: '';
-  flex: 1 1 auto;
-  min-width: var(--space-4);
-  margin-left: var(--space-2);
-  border-bottom: 2px dotted var(--rule);
+.sp-toast-close {
+  width: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
-.spec-row dd {
-  margin: 0;
-  text-align: right;
+.sp-toast :focus-visible {
+  outline-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--ink);
 }
 
-.spec-row:has(.cover) dd {
-  flex: 0 1 60%;
+.sp-toast[data-tone='error'] :focus-visible {
+  outline-color: var(--surface);
+  box-shadow: 0 0 0 2px var(--danger);
 }
 
-.demand-line {
-  margin: 0;
+@media (hover: hover) {
+  .sp-toast-action:hover,
+  .sp-toast-close:hover {
+    background: rgb(255 254 249 / 12%);
+  }
 }
 
-/* --- record sheet (native dialog): bottom sheet, docked right ≥ 1024 px, never centred --- */
+@media (pointer: coarse) {
+  .sp-toast-action,
+  .sp-toast-close {
+    min-height: var(--target);
+  }
 
+  .sp-toast-close {
+    width: var(--target);
+  }
+}
+
+@keyframes sp-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (min-width: 640px) {
+  .sp-toasts {
+    top: calc(var(--header-h) + var(--space-4));
+    right: max(var(--gutter), calc((100vw - var(--maxw)) / 2));
+    bottom: auto;
+    left: auto;
+    width: min(400px, calc(100vw - 2 * var(--gutter)));
+  }
+}
+
+/* --- the record sheet: a bill book's counterfoil. Bottom sheet on phones, docked right from 1024px --- */
+
+.sp-sheet,
 dialog.sheet {
   width: 100%;
   max-width: 100%;
@@ -1069,21 +1255,26 @@ dialog.sheet {
   overflow: hidden;
   border: 0;
   border-radius: var(--r-sheet) var(--r-sheet) 0 0;
-  background: var(--paper);
-  box-shadow: 0 -8px 32px rgb(29 27 22 / 0.25);
+  background: var(--surface);
+  box-shadow: var(--shadow-sheet);
   color: var(--ink);
 }
 
+.sp-sheet[open],
 dialog.sheet[open] {
   display: flex;
-  animation: sheet-up var(--dur-sheet) var(--ease-out);
+  animation: sp-sheet-up var(--dur-sheet) var(--ease-out);
 }
 
+.sp-sheet::backdrop,
 dialog.sheet::backdrop {
-  background: rgb(29 27 22 / 0.35);
+  background: var(--scrim);
+  animation: sp-fade var(--dur-sheet) ease-out;
 }
 
+.sp-sheet-frame,
 .sheet-frame,
+.sp-sheet-form,
 .sheet-form {
   display: flex;
   flex: 1 1 auto;
@@ -1092,481 +1283,202 @@ dialog.sheet::backdrop {
   min-height: 0;
 }
 
+.sp-sheet-frame,
 .sheet-frame {
   max-height: 92dvh;
 }
 
+/* The stub: a slim saffron band carrying the title, torn off along a row of punched holes. */
+.sp-sheet-stub,
 .sheet-head {
   position: relative;
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-3) var(--space-2) var(--space-4);
-  border-bottom: 2px solid var(--ink);
+  min-height: 56px;
+  margin-bottom: 10px;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+  background: var(--brand);
+  color: var(--ink);
 }
 
-/* Grab handle. */
-.sheet-head::before {
+.sp-sheet-stub::after,
+.sheet-head::after {
   content: '';
   position: absolute;
-  top: 6px;
-  left: 50%;
-  width: 40px;
-  height: 4px;
-  margin-left: -20px;
-  border-radius: 2px;
-  background: var(--rule);
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: 10px;
+  background: var(--perf-dot) center / 8px 10px repeat-x;
+  pointer-events: none;
 }
 
+.sp-sheet-title,
 .sheet-title {
-  font-size: var(--text-lg);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-size-adjust: none;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
-.sheet-close {
-  min-width: 44px;
+/* Ink on saffron (7.82), not green, for the close button on the stub. */
+.sp-sheet-stub .sp-sheet-close,
+.sheet-head .sheet-close {
+  width: var(--target);
+  min-width: var(--target);
   padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink);
 }
 
+@media (hover: hover) {
+  .sp-sheet-stub .sp-sheet-close:hover,
+  .sheet-head .sheet-close:hover {
+    background: rgb(32 43 39 / 10%);
+  }
+}
+
+.sp-sheet-body,
 .sheet-body {
   flex: 1 1 auto;
   min-height: 0;
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-4);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
+/* The submit button lives here, outside the scrolling body, so it never scrolls away. */
+.sp-sheet-foot,
 .sheet-foot {
+  flex: none;
   padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--rule);
-  background: var(--paper);
+  border-top: var(--hairline) solid var(--line);
+  background: var(--surface);
 }
 
-@keyframes sheet-up {
+@keyframes sp-sheet-up {
   from {
     transform: translateY(100%);
   }
 }
 
-@keyframes sheet-in {
+@keyframes sp-sheet-in {
   from {
     transform: translateX(100%);
   }
 }
 
+@keyframes sp-fade {
+  from {
+    opacity: 0;
+  }
+}
+
 @media (min-width: 1024px) {
+  .sp-sheet,
   dialog.sheet {
     width: 420px;
     height: 100dvh;
     max-height: 100dvh;
     margin: 0 0 0 auto;
-    border-left: 2px solid var(--ink);
     border-radius: 0;
-    box-shadow: -8px 0 32px rgb(29 27 22 / 0.2);
   }
 
+  .sp-sheet[open],
   dialog.sheet[open] {
-    animation-name: sheet-in;
+    animation-name: sp-sheet-in;
   }
 
+  /* Docked, the tear line runs down the left edge, where the bill left the book. */
+  .sp-sheet::before,
+  dialog.sheet::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    width: 14px;
+    background: var(--perf-dot) center / 14px 8px repeat-y;
+    pointer-events: none;
+  }
+
+  .sp-sheet-frame,
   .sheet-frame {
     height: 100%;
     max-height: 100dvh;
   }
 
-  .sheet-head::before {
-    display: none;
+  .sp-sheet-stub,
+  .sheet-head {
+    margin-bottom: 0;
+    padding-left: var(--space-6);
+  }
+
+  .sp-sheet-stub::after,
+  .sheet-head::after {
+    content: none;
+  }
+
+  .sp-sheet-body,
+  .sheet-body {
+    padding: var(--space-5) var(--space-5) var(--space-5) var(--space-6);
+  }
+
+  .sp-sheet-foot,
+  .sheet-foot {
+    padding: var(--space-4) var(--space-5) var(--space-4) var(--space-6);
   }
 }
 
-/* --- product picker --- */
-
-.picker {
-  margin-bottom: var(--space-4);
-}
-
-.picker .field-label {
+/* The same tear line for any other element: a 10px strip of holes, across or down. */
+.sp-perf {
   display: block;
-  margin-bottom: var(--space-1);
+  height: 10px;
+  background: var(--perf-dot) center / 8px 10px repeat-x;
 }
 
-.picker-results {
-  max-height: 15rem;
-  margin: var(--space-2) 0 0;
-  padding: 0;
-  overflow-y: auto;
-  border: 2px solid var(--ink);
-  border-radius: var(--r-sm);
-  background: var(--paper-raised);
-  list-style: none;
-}
-
-.picker-results:empty {
-  display: none;
-}
-
-.picker-results li + li {
-  border-top: 1px solid var(--rule);
-}
-
-.picker-results button {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: var(--space-2);
-  width: 100%;
-  min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-  border: 0;
-  background: none;
-  cursor: pointer;
-  text-align: left;
-}
-
-.picker-results button:hover,
-.picker-results button:focus-visible {
-  background: var(--warn-bg);
-}
-
-.picker-sku {
-  color: var(--ink-soft);
-  font-size: var(--text-xs);
-}
-
-.picker-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.picker-qty {
-  font-size: var(--text-sm);
-}
-
-.picked {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-1) var(--space-2);
-  margin-bottom: var(--space-4);
-  padding: var(--space-3);
-  border: 2px solid var(--ink);
-  border-radius: var(--r-sm);
-  background: var(--paper-raised);
-}
-
-.picked .field-label {
-  grid-column: 1 / -1;
-}
-
-.picked-line {
-  margin: 0;
-}
-
-.preview-line {
-  margin: 0 0 var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-left: 4px solid var(--ink);
-  background: var(--paper-raised);
-}
-
-/* --- planner --- */
-
-.planner-form {
-  display: grid;
-  gap: 0 var(--space-5);
-  margin-bottom: var(--space-4);
-  padding: var(--space-4) var(--space-4) 0;
-  border: 2px solid var(--ink);
-  border-radius: var(--r-sm);
-  background: var(--paper-raised);
-}
-
-.planner-run {
-  margin-bottom: var(--space-4);
-}
-
-.explainer {
-  max-width: 64ch;
-  padding: var(--space-4);
-  border-left: 4px solid var(--hivis);
-  background: var(--paper-raised);
-}
-
-.explainer p {
-  margin: 0;
-}
-
-.plan-head {
-  margin: 0 0 var(--space-3);
-  color: var(--ink-soft);
-  font-size: var(--text-sm);
-}
-
-@media (min-width: 1024px) {
-  .planner-form {
-    grid-template-columns: minmax(0, 1.4fr) auto auto auto;
-    align-items: end;
-  }
-}
-
-/* --- product detail and form --- */
-
-.detail-head {
-  display: grid;
-  gap: var(--space-1);
-  padding-bottom: var(--space-3);
-  border-bottom: 2px solid var(--ink);
-}
-
-.detail-head .page-title {
-  padding: 0;
-  border: 0;
-  font-family: var(--font-body);
-  font-stretch: normal;
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.detail-sku,
-.detail-category {
-  margin: 0;
-  color: var(--ink-soft);
-}
-
-.detail-category {
-  font-family: var(--font-label);
-  font-stretch: condensed;
-  font-size: var(--text-xs);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.detail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-
-.detail-grid {
-  display: grid;
-  gap: 0 var(--space-6);
-}
-
-@media (min-width: 1024px) {
-  .detail-grid {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  }
-}
-
-.product-form {
-  max-width: 44rem;
-}
-
-.form-pair,
-.form-trio {
-  display: grid;
-  gap: 0 var(--space-4);
-}
-
-@media (min-width: 640px) {
-  .form-pair {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .form-trio {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.form-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.sku-fixed {
-  margin: 0;
-  font-size: var(--text-lg);
-}
-
-/* --- status views --- */
-
-/* A screen tall, so the footer stays below the fold until the rows arrive (no layout shift). */
-.skeleton {
-  display: grid;
-  align-content: start;
-  gap: var(--space-2);
-  min-height: 100dvh;
-  margin-top: var(--space-3);
-}
-
-.skeleton-row {
+.sp-perf-v {
   display: block;
-  height: 44px;
-  border-radius: var(--r-sm);
-  background: linear-gradient(90deg, var(--track) 30%, var(--paper-raised) 50%, var(--track) 70%) 0 0 / 300% 100%;
-  animation: shimmer 1.4s linear infinite;
-}
-
-@keyframes shimmer {
-  from {
-    background-position: 100% 0;
-  }
-  to {
-    background-position: 0 0;
-  }
-}
-
-.empty-block,
-.error-block {
-  max-width: 40rem;
-  margin: var(--space-4) 0;
-  padding: var(--space-5);
-  border: 2px dashed var(--ink-soft);
-  border-radius: var(--r-sm);
-  background: var(--paper-raised);
-}
-
-.error-block {
-  border: 2px solid var(--out);
-  background: var(--danger-bg);
-}
-
-.empty-block h2,
-.error-block h2 {
-  margin-bottom: var(--space-2);
-  font-size: var(--text-lg);
-}
-
-/* --- API-down banner and footer --- */
-
-.api-banner-region {
-  max-width: var(--maxw);
-  width: 100%;
-  margin: 0 auto;
-  padding: 0 var(--space-4);
-}
-
-.api-banner {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-  margin-top: var(--space-3);
-  padding: var(--space-3) var(--space-3) var(--space-3) calc(var(--space-4) + 10px);
-  border: 2px solid var(--ink);
-  background: var(--warn-bg);
-}
-
-.api-banner::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
+  align-self: stretch;
   width: 10px;
-  background: var(--hazard);
+  background: var(--perf-dot) center / 10px 8px repeat-y;
 }
 
-.api-banner p {
-  flex: 1 1 16rem;
-  margin: 0;
-  font-weight: 600;
+/* --- icons --- */
+
+.sp-icon {
+  flex: none;
+  vertical-align: -0.2em;
 }
 
-.sha-skew {
-  margin-left: var(--space-2);
-  padding: 0 var(--space-1);
-  border: 1px solid var(--cover-amber);
-  background: var(--warn-bg);
-  color: var(--ink);
-  cursor: help;
-}
+/* --- forced colours (Windows contrast themes): fills and box-shadow bars vanish, so the
+   selected and current states fall back to outlines and underlines --- */
 
-/* --- toasts: above the tab bar on phones, top-right from 640 px --- */
-
-.toast-stack {
-  position: fixed;
-  right: var(--space-3);
-  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--space-3));
-  left: var(--space-3);
-  z-index: 30;
-  display: grid;
-  gap: var(--space-2);
-  pointer-events: none;
-}
-
-.toast {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-  border-left: 6px solid var(--hivis);
-  border-radius: var(--r-md);
-  background: var(--ink);
-  box-shadow: 0 6px 20px rgb(29 27 22 / 0.3);
-  color: var(--paper);
-  pointer-events: auto;
-  animation: toast-in 180ms var(--ease-out);
-}
-
-.toast[data-tone='ok'] {
-  border-left-color: var(--toast-ok);
-}
-
-.toast[data-tone='error'] {
-  border-left-color: var(--toast-error);
-}
-
-.toast-text {
-  flex: 1 1 auto;
-  margin: 0;
-  font-size: var(--text-sm);
-}
-
-.toast-action {
-  min-height: 36px;
-  padding: 0 var(--space-3);
-  border: 0;
-  border-radius: var(--r-sm);
-  background: var(--hivis);
-  color: var(--ink);
-  cursor: pointer;
-  font-family: var(--font-label);
-  font-stretch: condensed;
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.toast-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  min-height: 36px;
-  border: 0;
-  background: none;
-  color: var(--paper);
-  cursor: pointer;
-}
-
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+@media (forced-colors: active) {
+  .sp-chip[aria-pressed='true'],
+  .bin-chip[aria-pressed='true'],
+  .sp-segment input:checked + span,
+  .segment input:checked + span {
+    outline: 2px solid Highlight;
+    outline-offset: -4px;
   }
-}
 
-@media (min-width: 640px) {
-  .toast-stack {
-    top: calc(var(--header-h) + var(--space-4));
-    right: var(--space-5);
-    bottom: auto;
-    left: auto;
-    width: 380px;
+  .sp-tab[aria-current='page'] .sp-tab-label {
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 6px;
+  }
+
+  .sp-mark::before,
+  .sp-mark-row::before,
+  :is(.sp-table, .ledger-table) tr.sp-mark-row > :first-child::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

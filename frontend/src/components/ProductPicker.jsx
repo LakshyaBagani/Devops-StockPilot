@@ -4,9 +4,11 @@ import { asList, paths } from '../api.js'
 import { LIMITS, PAGE_SIZE } from '../config.js'
 import { useApiGet } from '../hooks/useApiGet.js'
 import { useDebouncedValue } from '../hooks/useDebouncedValue.js'
-import { formatQty } from '../lib/format.js'
+import { formatNumber } from '../lib/format.js'
+import { Icon } from './Icon.jsx'
 
 // Server-side search (8 results). ArrowDown moves into the list; Enter in the box picks the top match.
+// Each result reads name first (wrapping, never truncated), the SKU beneath it, on hand on the right.
 export function ProductPicker({ inputRef, onSelect, version }) {
   const [text, setText] = useState('')
   const q = useDebouncedValue(text.trim(), 200)
@@ -42,43 +44,55 @@ export function ProductPicker({ inputRef, onSelect, version }) {
   }
 
   return (
-    <div className="picker">
-      <label className="field-label" htmlFor="record-product">
+    <div className="sp-field sp-picker">
+      <label className="sp-label" htmlFor="record-product">
         Product
       </label>
-      <input
-        id="record-product"
-        ref={inputRef}
-        type="search"
-        autoComplete="off"
-        maxLength={LIMITS.search}
-        placeholder="Type a SKU or name"
-        aria-describedby="record-product-hint"
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        onKeyDown={onInputKeyDown}
-      />
-      <p id="record-product-hint" className="field-hint">
-        Enter picks the first match; arrow keys move through the list.
+      <span className="sp-search">
+        <Icon name="search" size={20} />
+        <input
+          id="record-product"
+          ref={inputRef}
+          type="search"
+          autoComplete="off"
+          spellCheck="false"
+          maxLength={LIMITS.search}
+          placeholder="Type a SKU or name"
+          aria-describedby="record-product-hint"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onKeyDown={onInputKeyDown}
+        />
+      </span>
+      <p id="record-product-hint" className="sp-hint sp-picker-hint">
+        Enter picks the top match; the arrow keys move through the list.
       </p>
       {error && !data ? (
-        <p className="field-error" role="alert">
+        <p className="sp-error" role="alert">
           {error.message}
         </p>
       ) : (
-        <ul ref={listRef} className="picker-results" aria-label="Matching products" aria-busy={loading || undefined}>
+        <ul ref={listRef} className="sp-picker-list" aria-label="Matching products" aria-busy={loading || undefined}>
           {items.map((product, index) => (
             <li key={product.id}>
-              <button type="button" onClick={() => onSelect(product)} onKeyDown={(event) => onResultKeyDown(event, index)}>
-                <span className="num picker-sku">{product.sku}</span>
-                <span className="picker-name">{product.name}</span>
-                <span className="num picker-qty">{formatQty(product.on_hand, product.unit)}</span>
+              <button
+                type="button"
+                className="sp-picker-option"
+                onClick={() => onSelect(product)}
+                onKeyDown={(event) => onResultKeyDown(event, index)}
+              >
+                <span className="sp-picker-name">{product.name}</span>
+                <span className="sp-sku sp-picker-sku">{product.sku}</span>
+                <span className="sp-picker-qty">
+                  <span className="num">{formatNumber(product.on_hand)}</span>
+                  <span className="sp-unit">{product.unit}</span>
+                </span>
               </button>
             </li>
           ))}
         </ul>
       )}
-      {data && !loading && items.length === 0 && <p className="field-hint">No product matches &ldquo;{q}&rdquo;.</p>}
+      {data && !loading && items.length === 0 && <p className="sp-hint">No product matches &ldquo;{q}&rdquo;.</p>}
     </div>
   )
 }

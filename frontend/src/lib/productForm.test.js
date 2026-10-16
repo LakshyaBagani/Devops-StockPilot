@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { EMPTY_PRODUCT, changedFields, productToForm, validateProduct } from './productForm.js'
+import {
+  API_FIELDS,
+  EMPTY_PRODUCT,
+  FIELD_ORDER,
+  changedFields,
+  deleteBlockedReason,
+  productToForm,
+  validateProduct,
+} from './productForm.js'
 
 const STORED = {
   id: 3,
@@ -45,4 +53,18 @@ test('editing only the name produces a PUT body of exactly {name}', () => {
 test('an unchanged edit form produces an empty PUT body', () => {
   const { payload } = validateProduct(productToForm(STORED), { isNew: false })
   assert.deepEqual(changedFields(STORED, payload), {})
+})
+
+test('FIELD_ORDER lists every form field exactly once', () => {
+  assert.equal(new Set(FIELD_ORDER).size, FIELD_ORDER.length)
+  assert.deepEqual([...FIELD_ORDER].sort(), Object.keys(EMPTY_PRODUCT).sort())
+  assert.deepEqual([...FIELD_ORDER].sort(), Object.keys(API_FIELDS).sort())
+})
+
+test('deleteBlockedReason gives the short audit reason, in Indian grouping, only when there is history', () => {
+  assert.equal(deleteBlockedReason(23), 'Can’t delete: 23 movements kept for audit')
+  assert.equal(deleteBlockedReason(1), 'Can’t delete: 1 movement kept for audit')
+  assert.equal(deleteBlockedReason(150000), 'Can’t delete: 1,50,000 movements kept for audit')
+  assert.equal(deleteBlockedReason(0), null)
+  assert.equal(deleteBlockedReason(undefined), null)
 })

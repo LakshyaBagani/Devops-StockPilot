@@ -4,7 +4,10 @@ import { ToastContext } from '../state/toast.js'
 import { Icon } from './Icon.jsx'
 
 const MAX_TOASTS = 3
+const TONE_ICONS = { ok: 'check', error: 'alert' }
 
+// A toast reads like a receipt line ("Reynolds pen (blue) −20 → 111 left"). `message` may be a
+// string or a node, e.g. with <span className="num"> around the figures.
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
   const nextId = useRef(0)
@@ -28,14 +31,19 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext value={value}>
       {children}
-      <div className="toast-stack" role="status" aria-live="polite">
+      <div className="sp-toasts" role="status" aria-live="polite">
         {toasts.map((toast) => (
-          <div key={toast.id} className="toast" data-tone={toast.tone}>
-            <p className="toast-text">{toast.message}</p>
+          <div key={toast.id} className="sp-toast" data-tone={toast.tone}>
+            {TONE_ICONS[toast.tone] && (
+              <span className="sp-toast-icon">
+                <Icon name={TONE_ICONS[toast.tone]} size={20} />
+              </span>
+            )}
+            <p className="sp-toast-text">{toast.message}</p>
             {toast.action && (
               <button
                 type="button"
-                className="toast-action"
+                className="sp-toast-action"
                 onClick={() => {
                   dismiss(toast.id)
                   toast.action.onClick()
@@ -44,8 +52,8 @@ export function ToastProvider({ children }) {
                 {toast.action.label}
               </button>
             )}
-            <button type="button" className="toast-close" aria-label="Dismiss" onClick={() => dismiss(toast.id)}>
-              <Icon name="close" size={16} />
+            <button type="button" className="sp-toast-close" aria-label="Dismiss" onClick={() => dismiss(toast.id)}>
+              <Icon name="close" size={18} />
             </button>
           </div>
         ))}

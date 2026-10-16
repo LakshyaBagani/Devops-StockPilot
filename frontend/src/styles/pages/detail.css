@@ -1,0 +1,170 @@
+/*
+ * Product page: who the product is, how much is on hand and how long it lasts against the
+ * delivery time, then its money, demand and settings, then its own movements.
+ * Phones read top to bottom in that order; from 1024px the stock facts sit beside the movements
+ * and stay in view while the movements scroll.
+ */
+
+.sp-detail-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.sp-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* --- on hand: the page's figure, 36px Plex Mono, and its state in plain words --- */
+
+.sp-detail-onhand {
+  position: relative;
+}
+
+/* Reorder or out of stock: a 3px edge hanging in the gutter, beside the figure. */
+.sp-detail-onhand-warning::before,
+.sp-detail-onhand-danger::before {
+  content: '';
+  position: absolute;
+  inset-block: var(--space-1);
+  left: calc(-1 * var(--space-3));
+  width: var(--mark);
+  border-radius: 2px;
+  background: var(--warning);
+}
+
+.sp-detail-onhand-danger::before {
+  background: var(--danger);
+}
+
+.sp-detail-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.sp-detail-figure {
+  margin: 0;
+  line-height: 1.15;
+}
+
+.sp-detail-figure .sp-unit {
+  font-size: var(--text-lg);
+}
+
+.sp-detail-state {
+  margin-left: var(--space-3);
+  white-space: nowrap;
+}
+
+.sp-detail-cover {
+  margin: var(--space-3) 0 var(--space-5);
+}
+
+.sp-detail-actions {
+  margin-bottom: var(--space-5);
+}
+
+/* --- specs: label left, figure right, a hairline between; no dotted leaders --- */
+
+.sp-specs {
+  margin: 0;
+  border-top: var(--hairline) solid var(--line);
+}
+
+.sp-spec {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: var(--hairline) solid var(--line);
+}
+
+.sp-spec dt {
+  color: var(--muted);
+}
+
+.sp-spec dd {
+  margin: 0 0 0 auto;
+  text-align: right;
+}
+
+.sp-spec-aside {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.sp-spec-aside::before {
+  content: '·';
+  content: '·' / '';
+  margin: 0 var(--space-2);
+  color: var(--edge);
+}
+
+.sp-spec-aside .num {
+  color: var(--ink);
+}
+
+/* --- movements --- */
+
+.sp-detail-history .sp-section-head a {
+  white-space: nowrap;
+}
+
+/* Tablets: on hand, the runway and the actions on the left, the specs beside them. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .sp-detail-facts {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas:
+      'onhand specs'
+      'cover specs'
+      'actions specs'
+      '. specs';
+    column-gap: var(--space-6);
+  }
+
+  .sp-detail-onhand {
+    grid-area: onhand;
+  }
+
+  .sp-detail-cover {
+    grid-area: cover;
+  }
+
+  .sp-detail-actions {
+    grid-area: actions;
+    margin-bottom: 0;
+  }
+
+  .sp-detail-facts > .sp-specs {
+    grid-area: specs;
+    align-self: start;
+  }
+}
+
+/* --- from 1024px: facts beside movements --- */
+
+@media (min-width: 1024px) {
+  .sp-detail-grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+    column-gap: var(--space-7);
+  }
+
+  .sp-detail-history > .sp-section-head:first-child {
+    margin-top: 0;
+  }
+}
+
+/* Only where the whole column fits on screen, so nothing in it is ever out of reach. */
+@media (min-width: 1024px) and (min-height: 760px) {
+  .sp-detail-facts {
+    position: sticky;
+    top: var(--space-5);
+  }
+}

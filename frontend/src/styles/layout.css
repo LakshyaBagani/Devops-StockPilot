@@ -1,6 +1,6 @@
-/* Shell, header, tab bar and page frame. Mobile first: min-width queries only. */
+/* Shell: header, API banner, page frame, footer and navigation. Mobile first. */
 
-.shell {
+.sp-shell {
   display: grid;
   grid-template-rows: auto auto 1fr auto;
   min-height: 100dvh;
@@ -8,238 +8,298 @@
   padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
 }
 
-.topbar {
+/* The content frame: 1180px of content with the gutters outside it, wider in landscape notches. */
+.sp-frame {
+  width: 100%;
+  max-width: calc(var(--maxw) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: max(var(--gutter), env(safe-area-inset-left)) max(var(--gutter), env(safe-area-inset-right));
+}
+
+.sp-main {
+  min-width: 0;
+  padding-block: var(--space-4) var(--space-6);
+}
+
+/* --- header: the printed wordmark (and, from 640px, the navigation) --- */
+
+.sp-header {
+  border-bottom: var(--hairline) solid var(--line);
   background: var(--paper);
 }
 
-/* Warehouse floor tape under the header. */
-.topbar::after {
-  content: '';
-  display: block;
-  height: 4px;
-  background: var(--hazard);
-}
-
-.topbar-inner {
+.sp-header-row {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 0 var(--space-4);
-  max-width: var(--maxw);
-  min-height: var(--header-h);
-  margin: 0 auto;
-  padding: 0 var(--space-4);
+  gap: var(--space-6);
+  height: var(--header-h);
 }
 
-.wordmark {
+/* "StockPilot" set in Besley with a short saffron printer's rule under "Stock"; no icon box. */
+.sp-wordmark {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
+  min-height: var(--target);
   color: var(--ink);
-  font-family: var(--font-label);
-  font-stretch: condensed;
-  font-size: 1.3rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-size-adjust: none;
+  font-weight: 600;
+  line-height: 1;
   text-decoration: none;
-  text-transform: uppercase;
-}
-
-.subtitle {
-  min-width: 0;
-  margin: 0 0 0 auto;
-  overflow: hidden;
-  color: var(--ink-soft);
-  font-size: var(--text-sm);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Phones: a fixed bottom tab bar with five equal columns, Record in hi-vis. */
-.tabbar {
+.sp-wordmark-stock {
+  position: relative;
+}
+
+.sp-wordmark-stock::after {
+  content: '';
+  position: absolute;
+  right: 0.06em;
+  bottom: -0.24em;
+  left: 0.04em;
+  height: var(--mark);
+  background: var(--brand);
+}
+
+/* --- navigation: a fixed five-item tab bar on phones, Record as the green action --- */
+
+.sp-nav {
   position: fixed;
   inset: auto 0 0;
   z-index: 20;
-  padding-bottom: env(safe-area-inset-bottom);
-  background: var(--paper-raised);
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  border-top: var(--hairline) solid var(--line);
+  background: var(--surface);
 }
 
-/* The border sits inside --tabbar-h, so the shell's bottom padding clears the whole bar. */
-.tabbar ul {
+.sp-nav-list {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   height: var(--tabbar-h);
-  border-top: 2px solid var(--ink);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.tab {
+.sp-nav-item {
   display: flex;
+  min-width: 0;
+}
+
+.sp-tab {
+  display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 3px;
-  width: 100%;
-  height: 100%;
-  min-height: 44px;
+  min-width: 0;
+  min-height: var(--target);
   padding: 0;
   border: 0;
   background: none;
-  color: var(--ink-soft);
-  cursor: pointer;
-  font-family: var(--font-label);
-  font-stretch: condensed;
-  font-size: var(--text-xs);
+  color: var(--muted);
+  font-size: 0.8125rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
-  line-height: 1;
+  line-height: 1.1;
   text-decoration: none;
-  text-transform: uppercase;
+  transition:
+    color var(--dur-feedback),
+    background-color var(--dur-feedback),
+    box-shadow var(--dur-feedback);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.tab[aria-current='page'] {
+.sp-tab-label {
+  position: relative;
+  white-space: nowrap;
+}
+
+/* The current destination is inked and underlined (out of flow, so labels stay level); Record
+   stays the green action. */
+.sp-tab[aria-current='page'] {
   color: var(--ink);
-  box-shadow: inset 0 3px 0 var(--ink);
 }
 
-.tab-record-phone .tab {
-  background: var(--hivis);
-  color: var(--ink);
+.sp-tab[aria-current='page'] .sp-tab-label::after {
+  content: '';
+  position: absolute;
+  top: calc(100% + 3px);
+  right: 0;
+  left: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
 }
 
-.tab-record-wide {
+.sp-tab-record {
+  margin: 6px 4px;
+  border-radius: var(--r-md);
+  background: var(--action);
+  color: var(--surface);
+}
+
+.sp-tab-record:active {
+  background: var(--action-press);
+}
+
+@media (hover: hover) {
+  .sp-tab:hover {
+    color: var(--ink);
+  }
+
+  .sp-tab-record:hover {
+    background: var(--action-hover);
+    color: var(--surface);
+  }
+}
+
+.sp-nav-record-wide,
+.sp-nav-record-more {
   display: none;
 }
 
-.page {
-  position: relative;
-  width: 100%;
-  max-width: var(--maxw);
-  min-width: 0;
-  margin: 0 auto;
-  padding: var(--space-4);
+/* While a field has the phone keyboard up, the tab bar would ride on top of it: hide it. */
+@media (max-width: 639px) and (pointer: coarse) {
+  body:has(:is(input:not([type='radio'], [type='checkbox'], [type='range']), textarea):focus) .sp-nav {
+    visibility: hidden;
+  }
 }
 
-.site-footer {
-  border-top: 1px solid var(--rule);
-  background: var(--paper);
-  color: var(--ink-soft);
+/* --- footer: in the document flow, the shop's line and the build imprint --- */
+
+.sp-footer {
+  border-top: var(--hairline) solid var(--line);
+  color: var(--muted);
   font-size: var(--text-xs);
+  line-height: 1.5;
 }
 
-.site-footer p {
-  max-width: var(--maxw);
-  margin: 0 auto;
-  padding: var(--space-3) var(--space-4);
+.sp-footer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-5);
+  padding-block: var(--space-4);
+}
+
+.sp-footer-row p {
+  margin: 0;
+}
+
+/* "builds differ" stays readable: body type, warning colour, explained by its title. */
+.sp-skew {
+  margin-left: var(--space-2);
+  color: var(--warning);
+  font-family: var(--font-body);
+  font-weight: 600;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+  cursor: help;
 }
 
 @media (min-width: 640px) {
-  .shell {
+  .sp-shell {
     padding-bottom: 0;
   }
 
-  /* Header tabs on their own row under the wordmark. */
-  .tabbar {
+  .sp-main {
+    padding-block: var(--space-6) var(--space-7);
+  }
+
+  .sp-wordmark {
+    font-size: 1.5rem;
+  }
+
+  /* One header row: wordmark, the four destinations, then Record movement on the right. */
+  .sp-nav {
     position: static;
-    flex-basis: 100%;
+    flex: 1 1 auto;
+    align-self: stretch;
+    min-width: 0;
     padding: 0;
+    border: 0;
     background: none;
   }
 
-  .tabbar ul {
+  .sp-nav-list {
     display: flex;
-    border-top: 0;
     gap: var(--space-1);
-    height: auto;
-    padding-bottom: var(--space-2);
+    height: 100%;
   }
 
-  .tab {
-    flex-direction: row;
-    height: 44px;
-    padding: 0 var(--space-3);
-    font-size: var(--text-sm);
-  }
-
-  .tab .icon {
+  .sp-nav-record-phone {
     display: none;
   }
 
-  .tab:hover {
-    color: var(--ink);
-    background: var(--track);
-  }
-
-  .tab[aria-current='page'] {
-    box-shadow: inset 0 -3px 0 var(--ink);
-  }
-
-  .tab-record-phone {
-    display: none;
-  }
-
-  .tab-record-wide {
-    display: block;
+  .sp-nav-record-wide {
+    display: flex;
+    align-items: center;
     margin-left: auto;
   }
 
-  .tab-record-wide .tab {
-    border: 2px solid var(--ink);
+  .sp-tab {
+    flex: none;
+    flex-direction: row;
+    padding: 0 var(--space-2);
+    font-size: var(--text-md);
+    line-height: var(--leading);
+    /* The current-page bar sits on the header's hairline. */
+    box-shadow: inset 0 calc(-1 * var(--mark)) 0 transparent;
+  }
+
+  .sp-tab .sp-icon {
+    display: none;
+  }
+
+  .sp-tab[aria-current='page'] {
+    box-shadow: inset 0 calc(-1 * var(--mark)) 0 var(--action);
+  }
+
+  .sp-tab[aria-current='page'] .sp-tab-label::after {
+    content: none;
+  }
+
+  /* The header only underlines, so the ring hugs the word rather than boxing the full bar. */
+  .sp-tab:focus-visible {
+    outline: none;
+    box-shadow: inset 0 calc(-1 * var(--mark)) 0 transparent;
+  }
+
+  .sp-tab[aria-current='page']:focus-visible {
+    box-shadow: inset 0 calc(-1 * var(--mark)) 0 var(--action);
+  }
+
+  .sp-tab:focus-visible .sp-tab-label {
     border-radius: var(--r-sm);
-    background: var(--hivis);
-    color: var(--ink);
+    outline: 3px solid var(--action);
+    outline-offset: 6px;
   }
 
-  .tab-record-wide .tab:hover {
-    background: var(--hivis-press);
+  @media (hover: hover) {
+    .sp-tab:not([aria-current='page']):hover {
+      box-shadow: inset 0 calc(-1 * var(--mark)) 0 var(--line);
+    }
+  }
+}
+
+@media (min-width: 900px) {
+  .sp-tab {
+    padding: 0 var(--space-3);
   }
 
-  .page {
-    padding: var(--space-5);
-  }
-
-  .site-footer p {
-    padding: var(--space-3) var(--space-5);
+  .sp-nav-record-more {
+    display: inline;
   }
 }
 
 @media (min-width: 1024px) {
-  /* One header row: wordmark, subtitle, then the tabs pushed right. */
-  .subtitle {
-    margin-left: 0;
-  }
-
-  .tabbar {
-    flex: 0 1 auto;
-    margin-left: auto;
-  }
-
-  .tabbar ul {
-    padding-bottom: 0;
-  }
-
-  .tab-record-wide {
-    margin-left: var(--space-3);
-  }
-
-  .page {
-    padding: var(--space-6);
-  }
-
-  /* The ledger's red margin rule. */
-  .page::before {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 var(--space-3);
-    width: 4px;
-    border-inline: 1px solid rgb(179 38 30 / 0.28);
-    pointer-events: none;
-  }
-
-  .site-footer p {
-    padding: var(--space-3) var(--space-6);
+  .sp-header-row {
+    gap: var(--space-7);
   }
 }

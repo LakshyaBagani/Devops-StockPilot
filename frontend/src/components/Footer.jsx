@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { paths } from '../api.js'
-import { APP_NAME } from '../config.js'
+import { APP_NAME, APP_SUBTITLE } from '../config.js'
 import { useApiGet } from '../hooks/useApiGet.js'
 import { useApiStatus } from '../hooks/useApiStatus.js'
 
@@ -29,20 +29,24 @@ export function Footer() {
   const apiBuild = data ? `API v${data.version}, commit ${data.git_sha}, built ${data.build_time}` : undefined
   const skew = apiSha !== null && REAL_SHA.test(UI_SHA) && REAL_SHA.test(apiSha) && apiSha !== UI_SHA
 
+  // The shop's line (config.js, changed by the live demo) and the printer's imprint: both builds.
   return (
-    <footer className="site-footer">
-      <p className="num">
-        {APP_NAME} v{__APP_VERSION__} · <span title={`UI commit ${UI_BUILD}`}>ui {UI_SHA}</span> ·{' '}
-        <span title={apiBuild}>api {apiLabel}</span>
-        {skew && (
-          <span
-            className="sha-skew"
-            title={`UI ${UI_SHA} and API ${apiSha} differ: a rolling update is in progress or one image was not redeployed. ${apiBuild}.`}
-          >
-            builds differ
-          </span>
-        )}
-      </p>
+    <footer className="sp-footer">
+      <div className="sp-frame sp-footer-row">
+        <p>{APP_SUBTITLE}</p>
+        <p className="num">
+          {APP_NAME} v{__APP_VERSION__} · <span title={`UI commit ${UI_BUILD}`}>ui {UI_SHA}</span> ·{' '}
+          <span title={apiBuild}>api {apiLabel}</span>
+          {skew && (
+            <span
+              className="sp-skew"
+              title={`UI ${UI_SHA} and API ${apiSha} differ: a rolling update is in progress or one image was not redeployed. ${apiBuild}.`}
+            >
+              builds differ
+            </span>
+          )}
+        </p>
+      </div>
     </footer>
   )
 }

@@ -1,0 +1,645 @@
+/*
+ * Stock: the head (title, one-line summary, movement totals), search and category chips, and the
+ * unboxed stock table: open rows on phones, ruled table rows from 640px.
+ *
+ * The cover runway (CoverBar) is styled at the end of this file. The product page uses it too; it
+ * lives here only because the shared components.css belongs to the foundation lane.
+ */
+
+/* --- the top: heading, tools and (wide) the movement aside --- */
+
+.sp-stock-top {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
+}
+
+.sp-stock-heading {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .sp-stock-top {
+    gap: var(--space-5);
+    margin-bottom: var(--space-4);
+  }
+
+  .sp-stock-heading {
+    gap: var(--space-3);
+  }
+}
+
+/* Roomy: the aside spans the heading and the tools, so the column pair stays level. */
+@media (min-width: 1024px) {
+  .sp-stock-top {
+    grid-template-columns: minmax(0, 1fr) minmax(15rem, 21rem);
+    grid-template-areas:
+      'heading aside'
+      'tools aside';
+    column-gap: var(--space-7);
+  }
+
+  .sp-stock-heading {
+    grid-area: heading;
+  }
+
+  .sp-stock-top > .sp-stock-tools {
+    grid-area: tools;
+    align-self: end;
+  }
+
+  .sp-stock-top > .sp-stock-aside {
+    grid-area: aside;
+    align-self: start;
+  }
+}
+
+/* "₹1,63,497 stock value · 4 need reorder": one line of text with the reorder filter in it. */
+.sp-stock-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  color: var(--ink);
+}
+
+.sp-stock-worth {
+  white-space: nowrap;
+}
+
+.sp-stock-worth .num {
+  font-weight: 500;
+}
+
+.sp-stock-sep {
+  color: var(--muted);
+}
+
+/* On phones the toggle's own box separates it, and a dot would dangle if the line wrapped. */
+@media (max-width: 639px) {
+  .sp-stock-summary > .sp-stock-sep {
+    display: none;
+  }
+
+  .sp-stock-summary {
+    column-gap: var(--space-3);
+  }
+}
+
+/* The filter carries the rows' own mark: a 3px warning edge, then the plain words. */
+.sp-reorder-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--space-3) 0 calc(var(--space-3) + 2px);
+  border: var(--hairline) solid var(--edge);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: inset var(--mark) 0 0 var(--warning);
+  color: var(--warning);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-feedback),
+    border-color var(--dur-feedback),
+    color var(--dur-feedback);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sp-reorder-toggle .num {
+  font-weight: 500;
+}
+
+.sp-reorder-toggle:focus-visible {
+  box-shadow:
+    inset var(--mark) 0 0 var(--warning),
+    0 0 0 2px var(--surface);
+}
+
+.sp-reorder-toggle[aria-pressed='true'] {
+  padding-left: var(--space-2);
+  border-color: var(--action);
+  background: var(--action);
+  box-shadow: none;
+  color: var(--surface);
+}
+
+.sp-reorder-toggle[aria-pressed='true']:focus-visible {
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.sp-reorder-toggle[data-none]:not([aria-pressed='true']) {
+  box-shadow: none;
+  color: var(--ink);
+}
+
+.sp-reorder-toggle:disabled {
+  border-color: var(--line);
+  box-shadow: none;
+  color: var(--muted);
+  cursor: default;
+}
+
+.sp-reorder-toggle:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+@media (hover: hover) {
+  .sp-reorder-toggle:hover:not(:disabled, [aria-pressed='true']) {
+    background: var(--paper-shift);
+  }
+
+  .sp-reorder-toggle[aria-pressed='true']:hover {
+    border-color: var(--action-hover);
+    background: var(--action-hover);
+  }
+}
+
+@media (pointer: coarse) {
+  .sp-reorder-toggle {
+    min-height: var(--target);
+  }
+}
+
+/* Contrast themes drop the fill: the pressed filter keeps an outline as well as its check. */
+@media (forced-colors: active) {
+  .sp-reorder-toggle[aria-pressed='true'] {
+    outline: 2px solid Highlight;
+    outline-offset: -4px;
+  }
+}
+
+/* Movement totals and the fastest movers: an aside from 1024px, a closed disclosure below it. */
+.sp-stock-pace {
+  margin: 0 0 var(--space-2);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.sp-stock-pace .num {
+  font-weight: 500;
+}
+
+.sp-movers-title,
+.sp-movers-pending {
+  margin: 0 0 2px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.sp-movers {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  list-style: none;
+}
+
+.sp-movers li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: 3px;
+}
+
+.sp-mover-name {
+  min-width: 0;
+  color: var(--ink);
+  text-decoration-color: transparent;
+}
+
+.sp-mover-name:hover {
+  color: var(--action);
+  text-decoration-color: currentColor;
+}
+
+.sp-mover-qty {
+  flex: none;
+  white-space: nowrap;
+}
+
+.sp-stock-more {
+  margin: 0;
+}
+
+.sp-stock-more .sp-disclosure-body {
+  padding-top: var(--space-1);
+}
+
+/* The trigger previews the first figure; once open, the body says it in full. */
+.sp-stock-more > summary > :first-child {
+  white-space: nowrap;
+}
+
+.sp-stock-more[open] .sp-disclosure-meta {
+  visibility: hidden;
+}
+
+@media (max-width: 359px) {
+  .sp-stock-more .sp-disclosure-meta {
+    display: none;
+  }
+}
+
+.sp-stock-more .sp-movers li + li {
+  border-top: var(--hairline) solid var(--line);
+}
+
+.sp-stock-aside {
+  padding-left: var(--space-5);
+  border-left: var(--hairline) solid var(--line);
+}
+
+/* Between 640 and 1023px the disclosure sits under the summary line, as wide as the page. */
+@media (min-width: 640px) {
+  .sp-stock-heading > .sp-stock-more {
+    margin-top: var(--space-1);
+  }
+}
+
+/* --- search and chips --- */
+
+.sp-stock-tools {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.sp-stock-search {
+  min-width: 0;
+}
+
+/* The search fields' clear button in the house colours, not the browser's blue. */
+:is(.sp-stock-search, .sp-picker) input[type='search']::-webkit-search-cancel-button {
+  width: 18px;
+  height: 18px;
+  margin-left: var(--space-2);
+  background: var(--muted);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.25' stroke-linecap='round'%3E%3Cpath d='M6.5 6.5l11 11M17.5 6.5l-11 11'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+:is(.sp-stock-search, .sp-picker) input[type='search']::-webkit-search-cancel-button:hover {
+  background: var(--ink);
+}
+
+@media (min-width: 640px) {
+  .sp-stock-search {
+    max-width: 24rem;
+  }
+}
+
+/* --- the stock table --- */
+
+.sp-stock-name {
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration-color: transparent;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.sp-stock-name:hover {
+  color: var(--action);
+  text-decoration-color: currentColor;
+}
+
+.sp-stock-meta {
+  display: block;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.sp-stock-meta .sp-tone-warning {
+  font-weight: 600;
+}
+
+.sp-stock-onhand,
+.sp-stock-value {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sp-stock-onhand .num {
+  font-weight: 500;
+}
+
+/* The Record text action keeps its 44px target while lining up with the text around it. */
+.sp-stock-record {
+  margin-right: calc(-1 * var(--space-2));
+}
+
+/* Inside the table's scroller, which bleeds to the screen edge on phones and 12px past the
+   text column from 640px: the hint's text lines up with the rows'. */
+.sp-stock-more-hint {
+  margin: var(--space-3) var(--gutter) 0;
+}
+
+@media (min-width: 640px) {
+  .sp-stock-more-hint {
+    margin-inline: var(--space-3);
+  }
+}
+
+/*
+ * Phones: an open row. Name opposite a prominent quantity; SKU and category quiet underneath, with
+ * the stock value under the quantity; then the full-width runway, its caption and Record.
+ */
+@media (max-width: 639px) {
+  .sp-stock-table tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'product onhand'
+      'product value'
+      'cover cover';
+    gap: 0 var(--space-3);
+    padding-block: var(--space-3);
+  }
+
+  .sp-stock-product {
+    grid-area: product;
+  }
+
+  .sp-stock-onhand {
+    grid-area: onhand;
+    align-self: start;
+  }
+
+  .sp-stock-onhand .num {
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
+
+  /* One row at a time on phones: the unit ends flush with the value under it. */
+  .sp-stock-onhand .sp-unit-slot {
+    width: auto;
+  }
+
+  .sp-stock-value {
+    grid-area: value;
+    align-self: end;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.4;
+  }
+
+  .sp-stock-table .sp-stock-value[data-label]::before {
+    display: inline;
+    margin-right: 0.3em;
+    line-height: inherit;
+  }
+
+  .sp-stock-cover {
+    grid-area: cover;
+    margin-top: var(--space-2);
+  }
+
+  /* Record shares the runway's area: bottom right, beside the caption. The button is drawn 32px
+     tall, so its focus ring clears the runway; an invisible extension keeps the 44px target. */
+  .sp-stock-action {
+    grid-area: cover;
+    align-self: end;
+    justify-self: end;
+    margin-bottom: -6px;
+  }
+
+  .sp-stock-record {
+    position: relative;
+    min-height: 32px;
+  }
+
+  .sp-stock-record::after {
+    content: '';
+    position: absolute;
+    inset: -6px 0;
+  }
+
+  .sp-stock-table .sp-cover {
+    row-gap: 10px;
+  }
+
+  .sp-stock-table .sp-cover-caption {
+    padding-right: 5.5rem;
+  }
+}
+
+/* Wide: ruled rows. Product, on hand, value, the runway, then a quiet Record. */
+@media (min-width: 640px) {
+  .sp-stock-table thead th:last-child {
+    width: 1%;
+  }
+
+  .sp-stock-onhand,
+  .sp-stock-value {
+    width: 1%;
+  }
+
+  .sp-stock-cover {
+    width: 12rem;
+  }
+
+  .sp-stock-action {
+    width: 1%;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* The caption takes the name's line and the runway the SKU line, so every first line is text. */
+  .sp-stock-table .sp-cover {
+    grid-template-areas:
+      'caption'
+      'runway';
+    row-gap: 0;
+  }
+
+  .sp-stock-table .sp-cover-caption {
+    line-height: 1.5rem;
+    white-space: nowrap;
+  }
+
+  .sp-stock-table .sp-runway {
+    margin-block: 3px;
+  }
+}
+
+/* A mouse needs less than the 44px touch target; touch screens this wide keep it. */
+@media (min-width: 640px) and (pointer: fine) {
+  .sp-stock-record {
+    min-height: 36px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .sp-stock-cover {
+    width: 20rem;
+  }
+}
+
+/* With a mouse, Record shows on the row under the pointer; focus always shows it, and it is in
+   the accessibility tree throughout. */
+@media (min-width: 640px) and (hover: hover) {
+  .sp-stock-record {
+    opacity: 0;
+    transition: opacity var(--dur-feedback);
+  }
+
+  .sp-stock-table tr:hover .sp-stock-record,
+  .sp-stock-record:focus {
+    opacity: 1;
+  }
+}
+
+/* --- the cover runway --- */
+
+/*
+ * 0 to 3× the delivery time (lead time). The delivery marker at 1× (ink, 2px) and the tick at 2×
+ * (edge, 1px) are drawn above and below the track, never across the fill. Default layout: runway,
+ * then caption; the stock table flips that from 640px.
+ */
+.sp-cover {
+  --sp-runway-fill: var(--success);
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'runway'
+    'caption';
+  row-gap: var(--space-1);
+  min-width: 0;
+}
+
+.sp-cover[data-level='amber'] {
+  --sp-runway-fill: var(--warning);
+}
+
+.sp-cover[data-level='red'] {
+  --sp-runway-fill: var(--danger);
+}
+
+.sp-runway {
+  position: relative;
+  display: block;
+  grid-area: runway;
+  height: 14px;
+  min-width: 96px;
+}
+
+.sp-runway-track {
+  position: absolute;
+  top: 4px;
+  right: 0;
+  left: 0;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--paper-shift);
+  box-shadow: inset 0 0 0 var(--hairline) var(--line);
+}
+
+.sp-runway-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--fill, 0) * 100%);
+  border-radius: 3px;
+  background: var(--sp-runway-fill);
+}
+
+/* Past 3× the fill runs off the end of the runway: a pointed tip instead of a rounded stop. */
+.sp-runway-fill[data-beyond] {
+  border-radius: 3px 0 0 3px;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 50%, calc(100% - 5px) 100%, 0 100%);
+}
+
+.sp-runway-delivery {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(100% / 3 - 1px);
+  width: 2px;
+  background: linear-gradient(var(--ink) 0 4px, transparent 4px 10px, var(--ink) 10px);
+}
+
+.sp-runway-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(200% / 3);
+  width: var(--hairline);
+  background: linear-gradient(var(--edge) 0 4px, transparent 4px 10px, var(--edge) 10px);
+}
+
+/* `labelled`: "delivery" printed over the marker. */
+.sp-runway[data-labelled] {
+  margin-top: 1.125rem;
+}
+
+.sp-runway-label {
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 1px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.sp-cover-caption {
+  grid-area: caption;
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.sp-cover-days {
+  color: var(--ink);
+}
+
+.sp-cover-days .num {
+  font-weight: 500;
+}
+
+.sp-cover[data-level='red'] .sp-cover-days,
+.sp-cover[data-level='amber'] .sp-cover-days {
+  font-weight: 600;
+}
+
+.sp-cover[data-level='red'] .sp-cover-days {
+  color: var(--danger);
+}
+
+.sp-cover[data-level='amber'] .sp-cover-days {
+  color: var(--warning);
+}
+
+.sp-cover[data-level='none'] .sp-cover-days {
+  color: var(--muted);
+}
+
+@media (forced-colors: active) {
+  .sp-runway-track {
+    outline: 1px solid CanvasText;
+  }
+
+  .sp-runway-fill,
+  .sp-runway-delivery,
+  .sp-runway-tick {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}

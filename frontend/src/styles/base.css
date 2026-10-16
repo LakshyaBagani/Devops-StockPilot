@@ -1,3 +1,5 @@
+/* Reset, typography, links, focus, motion and the page-load reveal. Mobile first. */
+
 *,
 *::before,
 *::after {
@@ -7,77 +9,130 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* Opening the sheet hides the page's scrollbar; reserving its gutter stops the layout jumping. */
+  scrollbar-gutter: stable;
 }
 
-/* Ruled ledger paper. */
 body {
   margin: 0;
   min-height: 100dvh;
-  background-color: var(--paper);
-  background-image: linear-gradient(to bottom, transparent 31px, var(--rule-faint) 31px);
-  background-size: 100% 32px;
+  background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--text-md);
+  font-size-adjust: var(--x-adjust);
+  /* Only 400 and 600 (Mukta) and 400 and 500 (Plex Mono) ship: never fake a heavier weight. */
+  font-synthesis-weight: none;
   line-height: var(--leading);
 }
 
+/* The record sheet is a modal dialog; this stops the page behind it scrolling (notably on iOS). */
 body.sheet-open {
   overflow: hidden;
 }
 
+::selection {
+  background: var(--selection);
+  color: var(--ink);
+}
+
+/* --- type: sentence case and normal tracking everywhere --- */
+
 h1,
 h2,
-h3 {
+h3,
+h4 {
   margin: 0;
-  font-family: var(--font-label);
-  font-stretch: condensed;
   font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  line-height: var(--leading-tight);
+  text-wrap: balance;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size-adjust: none;
 }
 
 p {
   margin: 0 0 var(--space-3);
+  text-wrap: pretty;
 }
 
-/* Every quantity, ₹ value, SKU and delta. */
+strong,
+b {
+  font-weight: 600;
+}
+
+small {
+  font-size: var(--text-sm);
+}
+
+/* Every quantity, rupee value, SKU, delta and build SHA. */
 .num {
   font-family: var(--font-num);
-  font-variant-numeric: tabular-nums slashed-zero;
+  font-variant-numeric: tabular-nums;
 }
 
+table {
+  border-collapse: collapse;
+}
+
+/* --- links --- */
+
 a {
-  color: var(--ink);
-  text-decoration: underline;
+  color: var(--action);
+  text-decoration-line: underline;
+  text-decoration-color: rgb(32 91 70 / 40%);
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
+  text-underline-offset: 0.22em;
+  transition: text-decoration-color var(--dur-feedback);
 }
 
 a:hover {
-  text-decoration-thickness: 2px;
+  text-decoration-color: currentColor;
 }
 
+/* --- focus: 3px action ring, with a surface gap so it reads on any background --- */
+
 :focus-visible {
-  outline: 3px solid var(--focus);
+  outline: 3px solid var(--action);
   outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--surface);
 }
+
+/* Programmatic focus targets (the skip link's <main>, headings) need no ring. */
+[tabindex='-1']:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* --- form elements inherit the type; 16px inputs stop iOS Safari zooming on focus --- */
 
 button,
 input,
 select,
 textarea {
+  margin: 0;
   font: inherit;
   color: inherit;
+  letter-spacing: inherit;
 }
 
-/* 16px inputs stop iOS Safari from zooming on focus. */
 input,
 select,
 textarea {
   font-size: 16px;
 }
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* --- utilities --- */
 
 .visually-hidden {
   position: absolute !important;
@@ -88,19 +143,66 @@ textarea {
   white-space: nowrap;
 }
 
-.skip-link {
+.sp-skip-link {
   position: absolute;
-  left: var(--space-2);
   top: -100px;
+  left: var(--gutter);
   z-index: 50;
-  padding: var(--space-2) var(--space-3);
-  background: var(--hivis);
-  color: var(--ink);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--r-sm);
+  background: var(--action);
+  color: var(--surface);
   font-weight: 600;
+  text-decoration: none;
 }
 
-.skip-link:focus {
+.sp-skip-link:focus {
   top: var(--space-2);
+}
+
+/*
+ * The page-load reveal: one per route. The page title, the summary (--i: 1) and the first ten rows
+ * of an .sp-reveal-rows container rise 4px into place. Each step is 20ms; the index is capped at
+ * 7, so the last element finishes by 240ms. Set --i yourself (style={{ '--i': 1 }}) for anything
+ * else that belongs to the reveal.
+ */
+@keyframes sp-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.sp-reveal,
+.sp-page-title,
+.page-title,
+.sp-reveal-rows > :nth-child(-n + 10) {
+  animation: sp-reveal var(--dur-reveal) var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 7) * var(--stagger));
+}
+
+.sp-reveal-rows > :nth-child(1) {
+  --i: 2;
+}
+
+.sp-reveal-rows > :nth-child(2) {
+  --i: 3;
+}
+
+.sp-reveal-rows > :nth-child(3) {
+  --i: 4;
+}
+
+.sp-reveal-rows > :nth-child(4) {
+  --i: 5;
+}
+
+.sp-reveal-rows > :nth-child(5) {
+  --i: 6;
+}
+
+.sp-reveal-rows > :nth-child(n + 6) {
+  --i: 7;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -111,6 +213,7 @@ textarea {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
 }

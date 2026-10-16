@@ -1,0 +1,242 @@
+/*
+ * The record sheet's form. The sheet itself (stub, tear line, dock, footer) is the shared .sp-sheet
+ * in components.css. Order of attention: product, movement, quantity and the stock it leaves, then
+ * submit; the note is optional and last. Open rows and plain fields: no boxes inside the sheet.
+ */
+
+.sp-record .sp-field,
+.sp-record .sp-segmented {
+  margin-bottom: var(--space-5);
+}
+
+.sp-record .sp-sheet-body > :last-child {
+  margin-bottom: 0;
+}
+
+/* --- the product: picked, or the picker --- */
+
+.sp-record-product {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'label label'
+    'picked change';
+  align-items: center;
+  gap: 2px var(--space-3);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--hairline) solid var(--line);
+}
+
+.sp-record-product-label {
+  grid-area: label;
+  margin: 0;
+}
+
+.sp-record-picked {
+  grid-area: picked;
+  min-width: 0;
+  margin: 0;
+}
+
+.sp-record-name {
+  display: block;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.sp-record-meta {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.sp-record-loading {
+  color: var(--muted);
+}
+
+.sp-record-change {
+  grid-area: change;
+  margin-right: calc(-1 * var(--space-2));
+}
+
+/* Results: name first and wrapping, the SKU under it, on hand on the right. The hover band
+   reaches 8px past the text column, so the names line up with the field above. */
+.sp-picker-list {
+  margin: var(--space-2) calc(-1 * var(--space-2)) 0;
+  padding: 0;
+  border-top: var(--hairline) solid var(--line);
+  list-style: none;
+}
+
+.sp-picker-list:empty {
+  display: none;
+}
+
+.sp-picker-list li {
+  border-bottom: var(--hairline) solid var(--line);
+}
+
+.sp-picker-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'name qty'
+    'sku qty';
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  width: 100%;
+  min-height: var(--target);
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  transition: background-color var(--dur-feedback);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sp-picker-option:focus-visible {
+  outline-offset: -3px;
+  box-shadow: none;
+  background: var(--paper-shift);
+}
+
+.sp-picker-option:active {
+  background: var(--paper-shift);
+}
+
+@media (hover: hover) {
+  .sp-picker-option:hover {
+    background: var(--paper-shift);
+  }
+}
+
+.sp-picker-name {
+  grid-area: name;
+  font-weight: 600;
+  line-height: 1.35;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.sp-picker-sku {
+  grid-area: sku;
+  line-height: 1.4;
+}
+
+.sp-picker-qty {
+  grid-area: qty;
+  align-self: center;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+/* Keyboard help is secondary, and of no use without a keyboard. */
+@media (pointer: coarse) {
+  .sp-picker-hint {
+    display: none;
+  }
+}
+
+/* --- quantity: the largest thing in the form --- */
+
+.sp-stepper {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 56px;
+  gap: var(--space-3);
+}
+
+.sp-stepper-btn {
+  min-height: 56px;
+  padding: 0;
+  color: var(--ink);
+}
+
+.sp-stepper-input {
+  min-height: 56px;
+  font-family: var(--font-num);
+  font-size: 1.5rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* The stock this leaves: "131 → 111 pcs left", under the quantity. */
+.sp-record-result {
+  margin-top: var(--space-2);
+}
+
+.sp-record-after {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: 1.4;
+}
+
+.sp-record-after .sp-unit {
+  margin-left: 0;
+}
+
+.sp-record-before,
+.sp-record-arrow {
+  color: var(--muted);
+}
+
+.sp-record-arrow {
+  align-self: center;
+  display: inline-flex;
+}
+
+.sp-record-left {
+  font-weight: 500;
+}
+
+.sp-record-after[data-short] .sp-record-left {
+  color: var(--danger);
+}
+
+.sp-record-short {
+  margin: var(--space-2) 0 0;
+}
+
+/* --- note --- */
+
+.sp-record-note textarea {
+  min-height: 4.25rem;
+}
+
+.sp-record-count {
+  justify-self: end;
+}
+
+/* --- footer: always on screen, the one green action --- */
+
+.sp-record-failure {
+  width: auto;
+  margin-bottom: var(--space-3);
+}
+
+.sp-record-submit {
+  min-height: 52px;
+  font-size: 1.0625rem;
+}
+
+@media (max-width: 1023px) {
+  /* BottomSheet sets these from the visual viewport: lift the sheet clear of an on-screen
+     keyboard that covers the page (iOS), and never let it grow taller than what is visible. */
+  .sp-sheet {
+    margin-bottom: var(--sp-sheet-lift, 0px);
+  }
+
+  .sp-sheet,
+  .sp-sheet-frame {
+    max-height: min(92dvh, calc(var(--sp-sheet-room, 100dvh) - var(--space-2)));
+  }
+}

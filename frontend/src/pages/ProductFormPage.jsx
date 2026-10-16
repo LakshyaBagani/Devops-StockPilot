@@ -6,15 +6,21 @@ import { EmptyState, ErrorState, Skeleton } from '../components/StatusViews.jsx'
 import { CATEGORIES, LIMITS, UNITS } from '../config.js'
 import { useApiGet } from '../hooks/useApiGet.js'
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
-import { EMPTY_PRODUCT, FORM_FIELDS, changedFields, productToForm, validateProduct } from '../lib/productForm.js'
+import {
+  EMPTY_PRODUCT,
+  FIELD_ORDER,
+  FORM_FIELDS,
+  changedFields,
+  productToForm,
+  validateProduct,
+} from '../lib/productForm.js'
 import { navigate } from '../router.js'
 import { useInventoryEvents } from '../state/inventoryEvents.js'
 import { useToast } from '../state/toast.js'
 
-const FIELD_ORDER = ['sku', 'name', 'category', 'unit', 'unitCost', 'reorderPoint', 'leadTime']
 const HINTS = {
   sku: '3–20 capital letters, digits or hyphens, e.g. PEN-REY-BLU',
-  unitCost: 'Rupees, up to 2 decimals',
+  unitCost: 'In rupees, up to 2 decimals',
   reorderPoint: 'Reorder when stock is at or below this',
   leadTime: `Supplier delivery time, ${LIMITS.leadTime.min} to ${LIMITS.leadTime.max} days`,
 }
@@ -37,22 +43,42 @@ function focusFirstInvalid(errors) {
 
 function Field({ field, label, error, children }) {
   return (
-    <div className="field">
-      <label className="field-label" htmlFor={fieldId(field)}>
+    <div className="sp-field">
+      <label className="sp-label" htmlFor={fieldId(field)}>
         {label}
       </label>
       {children}
       {HINTS[field] && (
-        <p id={`${fieldId(field)}-hint`} className="field-hint">
+        <p id={`${fieldId(field)}-hint`} className="sp-hint">
           {HINTS[field]}
         </p>
       )}
       {error && (
-        <p id={`${fieldId(field)}-error`} className="field-error">
+        <p id={`${fieldId(field)}-error`} className="sp-error">
           {error}
         </p>
       )}
     </div>
+  )
+}
+
+// A figure input with its rupee sign or unit printed inside it. The affixes are decoration: the
+// label and hint already say rupees, the unit and days.
+function Affixed({ prefix, suffix, children }) {
+  return (
+    <span className="sp-affixed">
+      {prefix && (
+        <span className="sp-affix sp-affix-pre" aria-hidden="true">
+          {prefix}
+        </span>
+      )}
+      {children}
+      {suffix && (
+        <span className="sp-affix sp-affix-post" aria-hidden="true">
+          {suffix}
+        </span>
+      )}
+    </span>
   )
 }
 
@@ -110,28 +136,7 @@ function ProductForm({ product }) {
   }
 
   return (
-    <form className="product-form" onSubmit={handleSubmit} noValidate>
-      {isNew ? (
-        <Field field="sku" label="SKU" error={errors.sku}>
-          <input
-            {...a11yProps('sku', errors.sku)}
-            className="num"
-            type="text"
-            autoComplete="off"
-            spellCheck="false"
-            maxLength={20}
-            value={values.sku}
-            onChange={(event) => update('sku', event.target.value.toUpperCase())}
-          />
-        </Field>
-      ) : (
-        <div className="field">
-          <span className="field-label">SKU</span>
-          <p className="num sku-fixed">{product.sku}</p>
-          <p className="field-hint">A SKU never changes once created.</p>
-        </div>
-      )}
-
+    <form className="sp-product-form sp-reveal" style={{ '--i': 2 }} onSubmit={handleSubmit} noValidate>
       <Field field="name" label="Name" error={errors.name}>
         <input
           {...a11yProps('name', errors.name)}
@@ -143,9 +148,34 @@ function ProductForm({ product }) {
         />
       </Field>
 
-      <div className="form-pair">
+      <div className="sp-field-pair">
+        {isNew ? (
+          <Field field="sku" label="SKU" error={errors.sku}>
+            <input
+              {...a11yProps('sku', errors.sku)}
+              className="num"
+              type="text"
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck="false"
+              maxLength={20}
+              value={values.sku}
+              onChange={(event) => update('sku', event.target.value.toUpperCase())}
+            />
+          </Field>
+        ) : (
+          <div className="sp-field">
+            <span className="sp-label">SKU</span>
+            <p className="num sp-sku-fixed">{product.sku}</p>
+            <p className="sp-hint">A SKU never changes once created.</p>
+          </div>
+        )}
         <Field field="category" label="Category" error={errors.category}>
-          <select {...a11yProps('category', errors.category)} value={values.category} onChange={(event) => update('category', event.target.value)}>
+          <select
+            {...a11yProps('category', errors.category)}
+            value={values.category}
+            onChange={(event) => update('category', event.target.value)}
+          >
             <option value="" disabled>
               Choose…
             </option>
@@ -156,6 +186,9 @@ function ProductForm({ product }) {
             ))}
           </select>
         </Field>
+      </div>
+
+      <div className="sp-field-pair">
         <Field field="unit" label="Unit" error={errors.unit}>
           <select {...a11yProps('unit', errors.unit)} value={values.unit} onChange={(event) => update('unit', event.target.value)}>
             {UNITS.map((unit) => (
@@ -165,56 +198,61 @@ function ProductForm({ product }) {
             ))}
           </select>
         </Field>
+        <Field field="unitCost" label="Unit cost" error={errors.unitCost}>
+          <Affixed prefix="₹" suffix={`/${values.unit}`}>
+            <input
+              {...a11yProps('unitCost', errors.unitCost)}
+              className="num sp-has-pre sp-has-post"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={values.unitCost}
+              onChange={(event) => update('unitCost', event.target.value)}
+            />
+          </Affixed>
+        </Field>
       </div>
 
-      <div className="form-trio">
-        <Field field="unitCost" label="Unit cost ₹" error={errors.unitCost}>
-          <input
-            {...a11yProps('unitCost', errors.unitCost)}
-            className="num"
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={values.unitCost}
-            onChange={(event) => update('unitCost', event.target.value)}
-          />
-        </Field>
+      <div className="sp-field-pair">
         <Field field="reorderPoint" label="Reorder point" error={errors.reorderPoint}>
-          <input
-            {...a11yProps('reorderPoint', errors.reorderPoint)}
-            className="num"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            value={values.reorderPoint}
-            onChange={(event) => update('reorderPoint', event.target.value)}
-          />
+          <Affixed suffix={values.unit}>
+            <input
+              {...a11yProps('reorderPoint', errors.reorderPoint)}
+              className="num sp-has-post"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              value={values.reorderPoint}
+              onChange={(event) => update('reorderPoint', event.target.value)}
+            />
+          </Affixed>
         </Field>
-        <Field field="leadTime" label="Lead time (days)" error={errors.leadTime}>
-          <input
-            {...a11yProps('leadTime', errors.leadTime)}
-            className="num"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            value={values.leadTime}
-            onChange={(event) => update('leadTime', event.target.value)}
-          />
+        <Field field="leadTime" label="Lead time" error={errors.leadTime}>
+          <Affixed suffix="days">
+            <input
+              {...a11yProps('leadTime', errors.leadTime)}
+              className="num sp-has-post"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              value={values.leadTime}
+              onChange={(event) => update('leadTime', event.target.value)}
+            />
+          </Affixed>
         </Field>
       </div>
 
-      {formError && (
-        <p className="field-error" role="alert">
-          {formError}
-        </p>
-      )}
-
-      <div className="form-actions">
-        <button type="submit" className="btn btn-hivis" disabled={pending || (!isNew && !dirty)}>
+      <div className="sp-form-foot">
+        {formError && (
+          <p className="sp-error" role="alert">
+            {formError}
+          </p>
+        )}
+        <button type="submit" className="sp-btn sp-btn-action" disabled={pending || (!isNew && !dirty)}>
           {pending ? 'Saving…' : isNew ? 'Create product' : 'Save changes'}
         </button>
         {/* Replaces the form's history entry, so Back never returns to the abandoned form. */}
-        <Link to={isNew ? '/products' : `/products/${product.id}`} replace className="btn btn-quiet">
+        <Link to={isNew ? '/products' : `/products/${product.id}`} replace className="sp-btn sp-btn-quiet">
           Cancel
         </Link>
       </div>
@@ -236,7 +274,7 @@ export function ProductFormPage({ id }) {
         title="No such product"
         body="It may have been deleted."
         action={
-          <Link to="/products" className="btn">
+          <Link to="/products" className="sp-btn">
             Back to products
           </Link>
         }
@@ -247,10 +285,15 @@ export function ProductFormPage({ id }) {
 
   return (
     <section aria-labelledby="product-form-title">
-      <header className="page-head">
-        <h1 id="product-form-title" className="page-title">
+      <header className="sp-page-head">
+        <h1 id="product-form-title" className="sp-page-title">
           {isNew ? 'New product' : 'Edit product'}
         </h1>
+        {isNew && (
+          <p className="sp-lede sp-reveal" style={{ '--i': 1 }}>
+            Opening stock is recorded afterwards, as a delivery.
+          </p>
+        )}
       </header>
       {body}
     </section>

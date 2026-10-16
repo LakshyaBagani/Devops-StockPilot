@@ -2,17 +2,20 @@ import { useRef, useState } from 'react'
 
 import { paths, recordMovement, undoMovement } from '../api.js'
 import { BottomSheet } from '../components/BottomSheet.jsx'
+import { Icon } from '../components/Icon.jsx'
 import { ProductPicker } from '../components/ProductPicker.jsx'
 import { QuantityStepper } from '../components/QuantityStepper.jsx'
 import { SegmentedControl } from '../components/SegmentedControl.jsx'
-import { KINDS, LIMITS } from '../config.js'
+import { KINDS, LIMITS, categoryLabel } from '../config.js'
 import { useApiGet } from '../hooks/useApiGet.js'
-import { formatDelta, formatQty, parseQuantity } from '../lib/format.js'
+import { MINUS, formatDelta, formatNumber, formatQty, parseQuantity } from '../lib/format.js'
 import { closeRecordSheet, setQuery, useLocation } from '../router.js'
 import { useInventoryEvents } from '../state/inventoryEvents.js'
 import { useToast } from '../state/toast.js'
 
-const KIND_OPTIONS = Object.entries(KINDS).map(([value, help]) => ({ value, label: value, help }))
+// The values stay IN / OUT / ADJUST (URL and API); the labels are sentence case.
+const KIND_LABELS = { IN: 'In', OUT: 'Out', ADJUST: 'Adjust' }
+const KIND_OPTIONS = Object.entries(KINDS).map(([value, help]) => ({ value, label: KIND_LABELS[value], help }))
 const SIGN_OPTIONS = [
   { value: 'remove', label: 'Remove', help: 'Fewer counted than the ledger shows' },
   { value: 'add', label: 'Add', help: 'More counted than the ledger shows' },
@@ -23,6 +26,41 @@ function signedDelta(kind, sign, quantity) {
   if (kind === 'IN') return quantity
   if (kind === 'OUT') return -quantity
   return sign === 'add' ? quantity : -quantity
+}
+
+function stockFigure(n) {
+  return n < 0 ? `${MINUS}${formatNumber(-n)}` : formatNumber(n)
+}
+
+// The resulting stock, live as the quantity changes: "131 → 111 pcs left". Before a quantity it
+// shows what is on hand. A shortfall turns the result red and adds an explicit danger note, until
+// the server has refused it: then its own 422 text, under the quantity, says it instead.
+function ResultLine({ product, after, refused }) {
+  return (
+    <div className="sp-record-result" aria-live="polite">
+      {after === null ? (
+        <p className="sp-record-after">
+          <span className="num">{formatNumber(product.on_hand)}</span>
+          <span className="sp-unit">{product.unit} on hand</span>
+        </p>
+      ) : (
+        <p className="sp-record-after" data-short={after < 0 || undefined}>
+          <span className="num sp-record-before">{formatNumber(product.on_hand)}</span>
+          <span className="sp-record-arrow">
+            <Icon name="arrow" size={18} />
+          </span>
+          <span className="visually-hidden"> to </span>
+          <span className="num sp-record-left">{stockFigure(after)}</span>
+          <span className="sp-unit">{product.unit} left</span>
+        </p>
+      )}
+      {after !== null && after < 0 && !refused && (
+        <p className="sp-note sp-note-danger sp-record-short">
+          Only {formatQty(product.on_hand, product.unit)} on hand: the server will refuse this.
+        </p>
+      )}
+    </div>
+  )
 }
 
 export function RecordSheet() {
@@ -76,6 +114,7 @@ export function RecordSheet() {
       const quantityToSend = kind === 'ADJUST' ? delta : quantity
       const created = await recordMovement({ productId: product.id, kind, quantity: quantityToSend, note })
       closeRecordSheet()
+      // A receipt line: "Reynolds pen (blue) −20 → 111 left".
       toast.show({
         message: `${created.product_name ?? product.name} ${formatDelta(created.delta)} → ${created.on_hand} left`,
         tone: 'ok',
@@ -98,31 +137,44 @@ export function RecordSheet() {
     }
   }
 
-  const submitLabel = delta === null ? `Record ${kind}` : `Record ${kind} ${formatDelta(delta)}`
+  let submitLabel = 'Record'
+  if (pending) submitLabel = 'Recording…'
+  else if (delta !== null) submitLabel = `Record ${formatDelta(delta)}${product ? ` ${product.unit}` : ''}`
 
   return (
     <BottomSheet title="Record movement" onClose={closeRecordSheet} initialFocusRef={productId ? quantityRef : pickerRef}>
-      <form className="sheet-form" onSubmit={handleSubmit} noValidate>
-        <div className="sheet-body">
+      <form className="sp-sheet-form sp-record" onSubmit={handleSubmit} noValidate>
+        <div className="sp-sheet-body">
           {productId && !productGone ? (
-            <div className="picked">
-              <span className="field-label">Product</span>
+            <div className="sp-record-product">
+              <p className="sp-label sp-record-product-label">Product</p>
               {product ? (
-                <p className="picked-line">
-                  <span className="num">{product.sku}</span> <strong>{product.name}</strong>{' '}
-                  <span className="num">· {formatQty(product.on_hand, product.unit)} on hand</span>
+                <p className="sp-record-picked">
+                  <span className="sp-record-name">{product.name}</span>
+                  <span className="sp-record-meta">
+                    <span className="sp-sku">{product.sku}</span>
+                    <span aria-hidden="true"> · </span>
+                    <span className="visually-hidden">, </span>
+                    {categoryLabel(product.category)}
+                  </span>
                 </p>
               ) : (
-                <p className="picked-line">{lookup.error ? lookup.error.message : 'Loading product…'}</p>
+                <p className="sp-record-picked sp-record-loading">
+                  {lookup.error ? lookup.error.message : 'Loading product…'}
+                </p>
               )}
-              <button type="button" className="btn btn-small btn-quiet" onClick={() => choose({ product: null })}>
-                Change
+              <button
+                type="button"
+                className="sp-btn sp-btn-quiet sp-record-change"
+                onClick={() => choose({ product: null })}
+              >
+                Change<span className="visually-hidden"> product</span>
               </button>
             </div>
           ) : (
             <>
               {(productGone || failure?.field === 'product') && (
-                <p className="field-error" role="alert">
+                <p className="sp-note sp-note-danger" role="alert">
                   Product no longer exists
                 </p>
               )}
@@ -166,11 +218,13 @@ export function RecordSheet() {
               setQuantityText(text)
               if (failure?.field === 'quantity') setFailure(null)
             }}
-          />
+          >
+            {product && <ResultLine product={product} after={after} refused={failure?.field === 'quantity'} />}
+          </QuantityStepper>
 
-          <div className="field">
-            <label className="field-label" htmlFor="record-note">
-              Note <span className="field-optional">(optional)</span>
+          <div className="sp-field sp-record-note">
+            <label className="sp-label" htmlFor="record-note">
+              Note <span className="sp-optional">(optional)</span>
             </label>
             <textarea
               id="record-note"
@@ -180,28 +234,23 @@ export function RecordSheet() {
               aria-describedby="record-note-count"
               onChange={(event) => setNote(event.target.value)}
             />
-            <p id="record-note-count" className="field-hint num">
+            <p id="record-note-count" className="sp-hint num sp-record-count">
               {note.length}/{LIMITS.noteLength}
             </p>
           </div>
-
-          {product && after !== null && (
-            <p className="preview-line num" aria-live="polite">
-              On hand {formatQty(product.on_hand)} → {formatQty(after, product.unit)}
-            </p>
-          )}
-          {after !== null && after < 0 && (
-            <p className="hint-warn">Only {formatQty(product.on_hand, product.unit)} on hand: the server will refuse this.</p>
-          )}
+        </div>
+        <div className="sp-sheet-foot">
           {failure?.field === 'form' && (
-            <p className="field-error" role="alert">
+            <p className="sp-note sp-note-danger sp-record-failure" role="alert">
               {failure.message}
             </p>
           )}
-        </div>
-        <div className="sheet-foot">
-          <button type="submit" className="btn btn-hivis btn-block" disabled={!product || !validQuantity || pending}>
-            {pending ? 'Recording…' : submitLabel}
+          <button
+            type="submit"
+            className="sp-btn sp-btn-action sp-btn-block sp-record-submit"
+            disabled={!product || !validQuantity || pending}
+          >
+            {submitLabel}
           </button>
         </div>
       </form>

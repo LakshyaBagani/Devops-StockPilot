@@ -1,0 +1,332 @@
+/*
+ * Ledger: the shop's day book. Each row is carried by the product and its signed change; time,
+ * type and note are quieter, and types are plain words in their colour (In, Out, Adjust).
+ *
+ * LedgerTable renders three forms of it:
+ *   .sp-ledger                    the ledger page: day headings, a product column, Undo
+ *   .sp-ledger-own.sp-ledger-flat one product's history (its page, or ?product_id=): no product
+ *                                 column, the day beside each time instead of a heading per row
+ *   .sp-ledger-undoable           any of them with the Undo column
+ *
+ * Stacked rows up to 767px, ruled table rows from 768px. Six columns need about 740px, so the
+ * shared .sp-table switch at 640px (components.css) is held back here: below 768px (a small
+ * tablet, or a laptop at 200% zoom) the table would squeeze names into one word per line.
+ */
+
+/* --- cells --- */
+
+/* A product name links to its page, set like the Stock page's names: ink at rest, green and
+   underlined under the pointer. */
+.sp-ledger-name {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration-color: transparent;
+  overflow-wrap: anywhere;
+  transition:
+    color var(--dur-feedback),
+    text-decoration-color var(--dur-feedback);
+}
+
+@media (hover: hover) {
+  .sp-ledger-name:hover {
+    color: var(--action);
+    text-decoration-color: currentColor;
+  }
+}
+
+.sp-ledger td.sp-ledger-time,
+.sp-ledger td.sp-ledger-note {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.sp-ledger td.sp-ledger-time {
+  white-space: nowrap;
+}
+
+/* "Wed, 14 Oct 01:09": the day in body type, the time in figures. */
+.sp-ledger-date {
+  font-family: var(--font-body);
+}
+
+.sp-ledger td.sp-ledger-kind {
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+/* The signed change: the row's figure, right-aligned, its unit in a fixed slot. */
+.sp-ledger td.sp-ledger-delta {
+  font-size: var(--text-lg);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sp-ledger-delta .num {
+  font-weight: 500;
+}
+
+.sp-ledger-delta[data-kind='IN'] .num {
+  color: var(--success);
+}
+
+.sp-ledger td.sp-ledger-action {
+  text-align: right;
+}
+
+/* Undo's text ends where the figures above it end; its hit area reaches past them. */
+.sp-ledger-undo {
+  margin-right: calc(-1 * var(--space-2));
+}
+
+.sp-ledger-action .sp-error {
+  text-align: left;
+}
+
+.sp-ledger-day {
+  font-weight: 600;
+}
+
+.sp-ledger-lede strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.sp-ledger-more {
+  margin: var(--space-4) 0 0;
+}
+
+/* --- stacked rows: product and change first, then time · type · note beside Undo --- */
+
+.sp-ledger td.sp-ledger-time {
+  grid-area: time;
+}
+
+.sp-ledger td.sp-ledger-product {
+  grid-area: product;
+}
+
+.sp-ledger td.sp-ledger-note {
+  grid-area: note;
+}
+
+.sp-ledger td.sp-ledger-kind {
+  grid-area: kind;
+}
+
+.sp-ledger td.sp-ledger-delta {
+  grid-area: delta;
+}
+
+.sp-ledger td.sp-ledger-action {
+  grid-area: action;
+}
+
+/* 640–767px: undo the shared table switch, so the rows stay stacked like a phone's. */
+@media (min-width: 640px) and (max-width: 767px) {
+  .sp-table-scroll:has(> .sp-ledger) {
+    margin-inline: calc(-1 * var(--gutter));
+    overflow-x: visible;
+  }
+
+  .sp-ledger,
+  .sp-ledger tbody {
+    display: block;
+  }
+
+  .sp-ledger thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .sp-ledger tr {
+    display: grid;
+    padding: var(--space-3) var(--gutter);
+    border-bottom: var(--hairline) solid var(--line);
+  }
+
+  .sp-ledger .sp-group-row {
+    display: block;
+    padding: var(--space-5) var(--gutter) var(--space-2);
+    border-bottom: var(--hairline) solid var(--edge);
+  }
+
+  .sp-ledger th,
+  .sp-ledger td,
+  .sp-ledger .sp-group-row th {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border-bottom: 0;
+    background: none;
+  }
+
+  .sp-ledger tbody tr:not(.sp-group-row):hover > td {
+    background: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .sp-ledger > tbody > tr:not(.sp-group-row) {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'product product product delta'
+      'time kind note action';
+    align-items: baseline;
+    column-gap: var(--space-2);
+    row-gap: 0;
+  }
+
+  /* Undo's 44px line already leaves room under the text. */
+  .sp-ledger-undoable > tbody > tr:not(.sp-group-row) {
+    padding-bottom: var(--space-1);
+  }
+
+  /* Armed (Confirm undo / Cancel) or refused, the action takes a line of its own. */
+  .sp-ledger > tbody > tr:has(.sp-confirm, .sp-error) {
+    grid-template-areas:
+      'product product product delta'
+      'time kind note note'
+      'action action action action';
+    padding-bottom: var(--space-3);
+  }
+
+  /* One product's history: "Mon, 12 Oct 22:58 · In ... +15 pcs", its note beneath. */
+  .sp-ledger-own > tbody > tr:not(.sp-group-row) {
+    grid-template-areas:
+      'time kind . delta'
+      'note note note note';
+  }
+
+  /* With no name to carry, Undo fits on the first line, after the change. */
+  .sp-ledger-own.sp-ledger-undoable > tbody > tr:not(.sp-group-row) {
+    grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'time kind . delta action'
+      'note note note note note';
+    padding-bottom: var(--space-3);
+  }
+
+  .sp-ledger-own.sp-ledger-undoable .sp-ledger-undo {
+    margin-block: calc((var(--target) - 1.5em) / -2);
+  }
+
+  .sp-ledger-own.sp-ledger-undoable > tbody > tr:has(.sp-confirm, .sp-error) {
+    grid-template-areas:
+      'time kind . delta delta'
+      'note note note note note'
+      'action action action action action';
+  }
+
+  .sp-ledger td.sp-ledger-note:empty {
+    display: none;
+  }
+
+  /* The first day sits close under the line that introduces the page. */
+  .sp-ledger > tbody:first-of-type > .sp-group-row {
+    padding-top: var(--space-2);
+  }
+
+  /* Without day headings, the list starts under a rule of its own. */
+  .sp-ledger-flat > tbody {
+    border-top: var(--hairline) solid var(--edge);
+  }
+
+  /* "07:43 · Adjust · stock count": the dots are decoration, silent to screen readers. */
+  .sp-ledger td.sp-ledger-kind::before,
+  .sp-ledger:not(.sp-ledger-own) td.sp-ledger-note::before {
+    content: '·';
+    content: '·' / '';
+    margin-right: var(--space-2);
+    color: var(--edge);
+    font-weight: 400;
+  }
+
+  /* The SKU stays for screen readers; in a stacked row the name is enough to read by. */
+  .sp-ledger-sku {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .sp-ledger-more .sp-btn {
+    width: 100%;
+  }
+}
+
+/* --- from 768px: Time · Product (SKU beneath) · Note · Type · Change · Undo --- */
+
+@media (min-width: 768px) {
+  .sp-ledger-sku {
+    display: block;
+    line-height: 1.4;
+  }
+
+  .sp-ledger .sp-ledger-time {
+    width: 4.5rem;
+  }
+
+  .sp-ledger-flat .sp-ledger-time {
+    width: 9rem;
+  }
+
+  .sp-ledger .sp-ledger-note {
+    width: 16%;
+  }
+
+  .sp-ledger-own .sp-ledger-note {
+    width: auto;
+  }
+
+  .sp-ledger .sp-ledger-kind {
+    width: 4.75rem;
+  }
+
+  .sp-ledger .sp-ledger-delta {
+    width: 8rem;
+  }
+
+  /* "Change" ends where the digits end: past them sits the unit slot (0.3em + 2.6em of the
+     unit's 0.875 × 18px), which is 2.85rem. */
+  .sp-ledger th.sp-ledger-delta {
+    padding-right: calc(var(--space-3) + 2.85rem);
+  }
+
+  /* Wide enough for the armed pair stacked (Confirm undo over Cancel), so arming a row never
+     re-flows the columns. */
+  .sp-ledger .sp-ledger-action {
+    width: 8.75rem;
+    white-space: nowrap;
+  }
+
+  .sp-ledger-action .sp-confirm {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  /* The 44px hit area overhangs the cell padding instead of making every row taller. */
+  .sp-ledger-undo {
+    margin-block: calc((var(--target) - 1.5em) / -2);
+  }
+
+  .sp-ledger-action .sp-error {
+    max-width: 14rem;
+    margin-left: auto;
+    white-space: normal;
+  }
+}
+
+@media (min-width: 1024px) {
+  .sp-ledger .sp-ledger-note {
+    width: 24%;
+  }
+
+  .sp-ledger-own .sp-ledger-note {
+    width: auto;
+  }
+}

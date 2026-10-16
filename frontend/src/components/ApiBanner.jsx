@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 
 import { getJson, paths } from '../api.js'
 import { useApiStatus } from '../hooks/useApiStatus.js'
+import { Icon } from './Icon.jsx'
 
 const PING_MS = 5000
 
@@ -25,11 +26,12 @@ export function ApiBanner() {
 
   // The live region stays mounted so screen readers announce the banner when it appears.
   return (
-    <div className="api-banner-region" role="status">
+    <div className="sp-frame" role="status">
       {status === 'down' && (
-        <div className="api-banner">
+        <div className="sp-api-banner">
+          <Icon name="alert" size={20} />
           <p>Can&rsquo;t reach the StockPilot API — showing the last data loaded.</p>
-          <button type="button" className="btn btn-small" onClick={() => ping()}>
+          <button type="button" className="sp-btn sp-btn-small" onClick={() => ping()}>
             Retry
           </button>
         </div>

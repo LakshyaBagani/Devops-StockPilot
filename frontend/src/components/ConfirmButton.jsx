@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 const ARMED_MS = 5000
 
-// Two-step inline confirm: the first click swaps the button for [confirm][Cancel] for 5 s.
-// Never window.confirm and never a modal.
-export function ConfirmButton({ label, confirmLabel, onConfirm, disabled, describedBy, ariaLabel }) {
+// Two-step inline confirm: the quiet trigger (Undo, Delete) swaps itself for a solid
+// [confirm][Cancel] pair for 5 s. Never window.confirm and never a modal. `className` adds
+// classes to the trigger only.
+export function ConfirmButton({ label, confirmLabel, onConfirm, disabled, describedBy, ariaLabel, className }) {
   const [armed, setArmed] = useState(false)
   const [pending, setPending] = useState(false)
   const groupRef = useRef(null)
@@ -45,7 +46,7 @@ export function ConfirmButton({ label, confirmLabel, onConfirm, disabled, descri
       <button
         ref={triggerRef}
         type="button"
-        className="btn btn-small"
+        className={className ? `sp-btn sp-btn-quiet ${className}` : 'sp-btn sp-btn-quiet'}
         disabled={disabled}
         aria-label={ariaLabel}
         aria-describedby={describedBy}
@@ -59,15 +60,15 @@ export function ConfirmButton({ label, confirmLabel, onConfirm, disabled, descri
   return (
     <span
       ref={groupRef}
-      className="confirm-group"
+      className="sp-confirm"
       onKeyDown={(event) => {
         if (event.key === 'Escape' && !pending) disarm()
       }}
     >
-      <button type="button" className="btn btn-small btn-danger" disabled={pending} onClick={confirm}>
+      <button type="button" className="sp-btn sp-btn-small sp-btn-danger" disabled={pending} onClick={confirm}>
         {pending ? 'Working…' : confirmLabel}
       </button>
-      <button type="button" className="btn btn-small btn-quiet" disabled={pending} onClick={disarm}>
+      <button type="button" className="sp-btn sp-btn-small sp-btn-quiet" disabled={pending} onClick={disarm}>
         Cancel
       </button>
     </span>

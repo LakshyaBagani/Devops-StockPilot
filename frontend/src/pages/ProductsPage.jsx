@@ -7,60 +7,90 @@ import { EmptyState, ErrorState, Skeleton } from '../components/StatusViews.jsx'
 import { PAGE_SIZE, categoryLabel } from '../config.js'
 import { useApiGet } from '../hooks/useApiGet.js'
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
-import { formatDays, formatNumber, formatPaise } from '../lib/format.js'
+import { formatNumber, formatPaise } from '../lib/format.js'
+import { deleteBlockedReason } from '../lib/productForm.js'
 import { useInventoryEvents } from '../state/inventoryEvents.js'
 import { useToast } from '../state/toast.js'
 
+// A product with movements can't be deleted. Its Delete stays focusable (aria-disabled) and is
+// described by the reason, which shows on press instead of under every row.
+function BlockedDelete({ product, reason, hintId }) {
+  const [shown, setShown] = useState(false)
+  return (
+    <>
+      <button
+        type="button"
+        className="sp-btn sp-btn-quiet sp-products-blocked"
+        aria-disabled="true"
+        aria-describedby={hintId}
+        title={reason}
+        onClick={() => setShown(true)}
+      >
+        Delete<span className="visually-hidden"> {product.name}</span>
+      </button>
+      <span id={hintId} className={shown ? 'sp-products-reason' : 'visually-hidden'}>
+        {reason}
+      </span>
+    </>
+  )
+}
+
 function ProductRow({ product, error, onDelete }) {
   const history = product.movements_count
-  const hintId = `delete-hint-${product.id}`
+  const reason = deleteBlockedReason(history)
   const errorId = `delete-error-${product.id}`
-  const hint = history > 0 ? `Has ${formatNumber(history)} movements — kept for the audit trail` : null
   return (
     <tr>
-      <td className="c-sku num">{product.sku}</td>
-      <td className="c-product">
-        <Link to={`/products/${product.id}`} className="c-name">
+      <td className="sp-products-product">
+        <Link to={`/products/${product.id}`} className="sp-products-name">
           {product.name}
         </Link>
+        <span className="sp-products-meta">
+          <span className="sp-sku">{product.sku}</span>
+          <span aria-hidden="true"> · </span>
+          <span className="visually-hidden">, </span>
+          {categoryLabel(product.category)}
+        </span>
       </td>
-      <td data-label="Category">{categoryLabel(product.category)}</td>
-      <td data-label="Unit">{product.unit}</td>
-      <td className="num" data-label="Unit cost">
-        {formatPaise(product.unit_cost_paise)}
+      <td className="sp-products-cost">
+        <span className="num">{formatPaise(product.unit_cost_paise)}</span>
+        <span className="sp-unit sp-products-per">
+          <span aria-hidden="true">/</span>
+          <span className="visually-hidden">per </span>
+          {product.unit}
+        </span>
       </td>
-      <td className="num" data-label="Reorder point">
-        {formatNumber(product.reorder_point)}
+      <td className="sp-products-reorder" data-label="Reorder at">
+        <span className="num">{formatNumber(product.reorder_point)}</span>
+        <span className="sp-unit sp-products-slot">{product.unit}</span>
       </td>
-      <td className="num" data-label="Lead time">
-        {formatDays(product.lead_time_days)}
+      <td className="sp-products-lead" data-label="Lead time">
+        <span className="num">{formatNumber(product.lead_time_days)}</span>
+        <span className="sp-unit sp-products-slot">d</span>
       </td>
-      <td className="num" data-label="History">
-        {formatNumber(history)}
+      <td className="sp-products-history">
+        <span className="num">{formatNumber(history)}</span>
+        <span className="sp-unit sp-products-history-word">{history === 1 ? 'movement' : 'movements'}</span>
       </td>
-      <td className="c-action">
-        <span className="row-actions">
-          <Link to={`/products/${product.id}/edit`} className="btn btn-small">
+      <td className="sp-products-actions">
+        <span className="sp-actions">
+          <Link to={`/products/${product.id}/edit`} className="sp-btn sp-btn-quiet sp-btn-flush">
             Edit<span className="visually-hidden"> {product.name}</span>
           </Link>
-          <span title={hint ?? undefined}>
+          {reason ? (
+            <BlockedDelete product={product} reason={reason} hintId={`delete-hint-${product.id}`} />
+          ) : (
             <ConfirmButton
               label="Delete"
               confirmLabel="Confirm delete"
               ariaLabel={`Delete ${product.name}`}
-              disabled={history > 0}
-              describedBy={[hint && hintId, error && errorId].filter(Boolean).join(' ') || undefined}
+              describedBy={error ? errorId : undefined}
               onConfirm={() => onDelete(product)}
             />
-          </span>
+          )}
         </span>
-        {hint && (
-          <p id={hintId} className="delete-hint">
-            {hint}
-          </p>
-        )}
         {error && (
-          <p id={errorId} className="field-error" role="alert">
+          <p id={errorId} className="sp-error" role="alert">
             {error}
           </p>
         )}
@@ -94,33 +124,30 @@ export function ProductsPage() {
     body = <EmptyState title="No products yet" body="Create the catalogue here; stock is recorded from the Stock page." />
   } else {
     body = (
-      <div className="table-scroll" data-refreshing={products.loading || undefined}>
-        <table className="ledger-table products-table" aria-busy={products.loading || undefined}>
+      <div className="sp-table-scroll" data-refreshing={products.loading || undefined}>
+        <table className="sp-table sp-products" aria-busy={products.loading || undefined}>
           <caption className="visually-hidden">Product catalogue, in SKU order</caption>
           <thead>
             <tr>
-              <th scope="col">SKU</th>
-              <th scope="col">Name</th>
-              <th scope="col">Category</th>
-              <th scope="col">Unit</th>
-              <th scope="col" className="num-col">
+              <th scope="col">Product</th>
+              <th scope="col" className="sp-products-cost sp-num-col">
                 Unit cost
               </th>
-              <th scope="col" className="num-col">
-                Reorder pt
+              <th scope="col" className="sp-products-reorder sp-num-col">
+                Reorder at
               </th>
-              <th scope="col" className="num-col">
+              <th scope="col" className="sp-products-lead sp-num-col">
                 Lead time
               </th>
-              <th scope="col" className="num-col">
-                History
+              <th scope="col" className="sp-products-history sp-num-col">
+                Movements
               </th>
-              <th scope="col">
+              <th scope="col" className="sp-products-actions">
                 <span className="visually-hidden">Actions</span>
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="sp-reveal-rows">
             {rows.map((product) => (
               <ProductRow key={product.id} product={product} error={rowErrors[product.id]} onDelete={remove} />
             ))}
@@ -132,11 +159,11 @@ export function ProductsPage() {
 
   return (
     <section aria-labelledby="products-title">
-      <header className="page-head page-head-actions">
-        <h1 id="products-title" className="page-title">
+      <header className="sp-page-head sp-page-head-row">
+        <h1 id="products-title" className="sp-page-title">
           Products
         </h1>
-        <Link to="/products/new" className="btn btn-hivis">
+        <Link to="/products/new" className="sp-btn sp-btn-action sp-reveal" style={{ '--i': 1 }}>
           New product
         </Link>
       </header>

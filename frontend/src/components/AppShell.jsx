@@ -1,29 +1,29 @@
-import { APP_SUBTITLE } from '../config.js'
+import { APP_NAME } from '../config.js'
 import { ApiBanner } from './ApiBanner.jsx'
 import { ErrorBoundary } from './ErrorBoundary.jsx'
 import { Footer } from './Footer.jsx'
-import { Icon } from './Icon.jsx'
 import { Link } from './Link.jsx'
+import Logo from './Logo.jsx'
 import { NavBar } from './NavBar.jsx'
 
 export function AppShell({ tab, pageKey, sheetOpen, children }) {
   return (
-    <div className="shell">
-      <a className="skip-link" href="#main">
+    <div className="sp-shell">
+      <a className="sp-skip-link" href="#main">
         Skip to content
       </a>
-      <header className="topbar">
-        <div className="topbar-inner">
-          <Link to="/" className="wordmark" aria-label="StockPilot home">
-            <Icon name="crate" size={26} />
-            <span>StockPilot</span>
+      <header className="sp-header">
+        <div className="sp-frame sp-header-row">
+          {/* The wordmark: the StockPilot mark, then the name in Geist. */}
+          <Link to="/" className="sp-wordmark" aria-label={`${APP_NAME} home`}>
+            <Logo />
+            <span className="sp-wordmark-stock">Stock</span>Pilot
           </Link>
-          <p className="subtitle">{APP_SUBTITLE}</p>
           <NavBar current={tab} sheetOpen={sheetOpen} />
         </div>
       </header>
       <ApiBanner />
-      <main id="main" className="page" tabIndex={-1}>
+      <main id="main" className="sp-frame sp-main" tabIndex={-1}>
         {/* Keyed on the path, so leaving a crashed screen recovers without a reload. */}
         <ErrorBoundary key={pageKey}>{children}</ErrorBoundary>
       </main>

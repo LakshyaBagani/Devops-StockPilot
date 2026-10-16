@@ -1,0 +1,506 @@
+/*
+ * SMART-SHOP theme layer. Loaded last, so it restyles the shared primitives (shell, nav, buttons,
+ * cards, tables, chips, segmented control, sheet, toasts, skeletons) to the SMART-SHOP look:
+ * soft lines, white rounded surfaces, ink controls, one orange accent, Geist type.
+ */
+
+/* --- base --- */
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'ss01', 'cv11';
+}
+.num,
+.sp-sku,
+.sp-figure,
+.sp-figure-lg {
+  font-family: var(--font-num);
+  font-feature-settings: 'tnum', 'ss01';
+}
+::selection {
+  background: var(--selection);
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-3);
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- shell: frosted sticky top bar --- */
+.sp-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: none;
+}
+/* Frosted bar on wider screens only: backdrop-filter makes the header the containing block of
+   fixed children, which would pull the phone's bottom tab bar up into the header. */
+@media (min-width: 640px) {
+  .sp-header {
+    background: color-mix(in oklch, var(--surface) 85%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+}
+.sp-header::after,
+.sp-header::before {
+  content: none;
+}
+.sp-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.sp-logo {
+  flex-shrink: 0;
+  margin-right: 10px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-1);
+}
+.sp-wordmark-stock {
+  box-shadow: none;
+  text-decoration: none;
+}
+.sp-wordmark-stock::after {
+  content: none;
+}
+
+/* Desktop nav: SMART-SHOP nav items (ink fill + orange icon when current). */
+.sp-nav-item .sp-tab,
+.sp-tab {
+  border-radius: var(--r-sm);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink-2);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.sp-tab:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+.sp-tab .sp-icon {
+  color: var(--ink-3);
+}
+@media (min-width: 640px) {
+  .sp-tab {
+    padding: 8px 12px;
+    min-height: 0;
+  }
+  .sp-tab[aria-current='page'],
+  .sp-tab[aria-current='page']:hover,
+  .sp-tab[aria-current='page']:focus-visible {
+    background: var(--ink);
+    color: var(--bg);
+    box-shadow: none;
+  }
+  .sp-tab:not([aria-current='page']):hover {
+    box-shadow: none;
+  }
+  .sp-tab[aria-current='page'] .sp-icon {
+    color: var(--accent);
+  }
+}
+@media (max-width: 639px) {
+  .sp-tab[aria-current='page'] {
+    color: var(--ink);
+  }
+  .sp-tab[aria-current='page'] .sp-icon {
+    color: var(--accent-2);
+  }
+  .sp-tab[aria-current='page'] .sp-tab-label::after {
+    background: var(--accent);
+  }
+  .sp-tab-record,
+  .sp-tab-record .sp-tab-label,
+  .sp-tab-record[aria-current='page'] {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .sp-tab-record .sp-icon {
+    color: var(--accent);
+  }
+}
+
+.sp-footer {
+  border-top: 1px solid var(--line);
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
+
+/* --- page head --- */
+.sp-page-title {
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.sp-lede {
+  font-size: var(--text-sm);
+  color: var(--ink-3);
+}
+.sp-section-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.sp-meta {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.sp-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* --- buttons (SMART-SHOP .btn) --- */
+.sp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: none;
+  transition: all 0.15s;
+}
+.sp-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--line-2);
+}
+.sp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.sp-btn-action {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+.sp-btn-action:hover:not(:disabled) {
+  background: var(--action-hover);
+  border-color: var(--action-hover);
+  color: var(--bg);
+}
+.sp-btn-action .sp-icon {
+  color: var(--accent);
+}
+.sp-btn-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-2);
+}
+.sp-btn-quiet:hover:not(:disabled) {
+  background: var(--hover);
+  border-color: transparent;
+  color: var(--ink);
+}
+.sp-btn-danger {
+  background: var(--surface);
+  color: var(--danger);
+  border-color: var(--line);
+}
+.sp-btn-danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: transparent;
+}
+.sp-btn-small {
+  min-height: 30px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* --- inputs --- */
+.sp-input,
+.sp-field input,
+.sp-field select,
+.sp-field textarea,
+.sp-search input {
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--surface);
+  font-family: var(--font-body);
+  box-shadow: none;
+  transition: border-color 0.15s;
+}
+.sp-input:focus,
+.sp-field input:focus,
+.sp-field select:focus,
+.sp-field textarea:focus,
+.sp-search input:focus {
+  border-color: var(--ink-3);
+  outline: none;
+}
+@media (max-width: 639px) {
+  .sp-field input,
+  .sp-field select,
+  .sp-field textarea,
+  .sp-search input {
+    font-size: 16px; /* iOS does not zoom inputs at 16px */
+  }
+}
+
+/* --- chips: SMART-SHOP soft filter buttons --- */
+.sp-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 6px 12px;
+  min-height: 32px;
+}
+.sp-chip:hover {
+  background: var(--surface-2);
+  border-color: var(--line-2);
+}
+.sp-chip[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
+/* --- segmented control (SMART-SHOP .seg) --- */
+.sp-segmented-track {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.sp-segment span {
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: none;
+}
+.sp-segment input:checked + span {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+
+/* --- tables: SMART-SHOP .table inside a card --- */
+.sp-table-scroll {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: auto;
+}
+.sp-table {
+  font-size: var(--text-sm);
+  border-collapse: collapse;
+}
+.sp-table thead th {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: transparent;
+  border-bottom: 1px solid var(--line);
+  box-shadow: none;
+}
+@media (min-width: 640px) {
+  .sp-table thead th {
+    padding: 12px 16px;
+  }
+  .sp-table tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sp-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+}
+.sp-table tbody tr {
+  transition: background 0.12s;
+}
+.sp-table tbody tr:hover {
+  background: var(--hover);
+}
+.sp-group-row th,
+.sp-group-row td {
+  background: var(--surface-2);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* --- cards: notes, disclosures, banners, empty and error states --- */
+.sp-disclosure,
+.sp-empty,
+.sp-error-state {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+.sp-note {
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+}
+.sp-note-warning {
+  background: var(--warn-soft);
+  color: var(--warning);
+}
+.sp-note-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.sp-note-success {
+  background: var(--ok-soft);
+  color: var(--success);
+}
+.sp-note-info {
+  background: var(--info-soft);
+  color: var(--info);
+}
+.sp-api-banner {
+  background: var(--warn-soft);
+  border-color: transparent;
+  border-radius: var(--r-md);
+}
+
+/* --- state words: SMART-SHOP soft status labels --- */
+.sp-tone-warning,
+.sp-tone-danger,
+.sp-tone-success {
+  font-weight: 600;
+}
+
+/* --- the record sheet: white panel, soft shadow, ink stub --- */
+.sp-sheet,
+.sp-sheet-frame {
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+}
+.sp-sheet-stub {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+.sp-sheet-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.sp-perf,
+.sp-perf-v {
+  display: none;
+}
+
+/* --- toasts --- */
+.sp-toast {
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-3);
+  border: 0;
+}
+.sp-toast .sp-toast-icon {
+  color: var(--accent);
+}
+
+/* --- skeleton shimmer (SMART-SHOP .sk) --- */
+.sp-skeleton,
+.sp-skeleton-row {
+  position: relative;
+  overflow: hidden;
+  background: #ece9e2;
+  border-radius: 8px;
+}
+.sp-skeleton::after,
+.sp-skeleton-row::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.7), transparent);
+  animation: sp-shimmer 1.4s infinite;
+}
+@keyframes sp-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sp-skeleton::after,
+  .sp-skeleton-row::after {
+    animation: none;
+  }
+}
+
+/* --- refinements --- */
+/* Nav items are compact rounded chips centred in the bar, not full-height tabs. */
+@media (min-width: 640px) {
+  .sp-nav-list {
+    align-items: center;
+    gap: 4px;
+  }
+  .sp-tab {
+    height: auto;
+    min-height: 36px;
+    align-self: center;
+  }
+}
+/* The wordmark reads as one word; only the logo tile is spaced off it. */
+.sp-wordmark {
+  gap: 0;
+}
+/* Cards line up with the content column. */
+.sp-table-scroll {
+  margin-inline: 0;
+}
+
+/* No tear-line perforation in this theme. */
+:root {
+  --perf-dot: none;
+}

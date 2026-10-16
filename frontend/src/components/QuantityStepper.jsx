@@ -7,19 +7,20 @@ function clamp(n) {
 }
 
 // Positive whole numbers only. type=text + inputmode=numeric avoids the number-input quirks
-// (scroll wheel, 'e'), and iOS's numeric keypad has no minus key anyway.
-export function QuantityStepper({ id, label, value, onChange, inputRef, error }) {
+// (scroll wheel, 'e'), and iOS's numeric keypad has no minus key anyway. `children` render under
+// the error inside the same field (the record sheet's live before → after line).
+export function QuantityStepper({ id, label, value, onChange, inputRef, error, children }) {
   const n = parseQuantity(value)
   const errorId = `${id}-error`
   return (
-    <div className="field">
-      <label className="field-label" htmlFor={id}>
+    <div className="sp-field sp-quantity">
+      <label className="sp-label" htmlFor={id}>
         {label}
       </label>
-      <div className="stepper">
+      <div className="sp-stepper">
         <button
           type="button"
-          className="btn stepper-btn"
+          className="sp-btn sp-stepper-btn"
           aria-label="Decrease quantity"
           disabled={n !== null && n <= 1}
           onClick={() => onChange(String(clamp((n ?? 2) - 1)))}
@@ -29,7 +30,7 @@ export function QuantityStepper({ id, label, value, onChange, inputRef, error })
         <input
           id={id}
           ref={inputRef}
-          className="num"
+          className="num sp-stepper-input"
           type="text"
           inputMode="numeric"
           pattern="[0-9]*"
@@ -44,7 +45,7 @@ export function QuantityStepper({ id, label, value, onChange, inputRef, error })
         />
         <button
           type="button"
-          className="btn stepper-btn"
+          className="sp-btn sp-stepper-btn"
           aria-label="Increase quantity"
           disabled={n !== null && n >= LIMITS.quantity}
           onClick={() => onChange(String(clamp((n ?? 0) + 1)))}
@@ -53,10 +54,11 @@ export function QuantityStepper({ id, label, value, onChange, inputRef, error })
         </button>
       </div>
       {error && (
-        <p id={errorId} className="field-error" role="alert">
+        <p id={errorId} className="sp-error" role="alert">
           {error}
         </p>
       )}
+      {children}
     </div>
   )
 }

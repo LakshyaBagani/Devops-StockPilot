@@ -11,29 +11,39 @@ const TABS = [
 
 function Tab({ tab, current }) {
   return (
-    <li>
-      <Link to={tab.to} className="tab" aria-current={current === tab.id ? 'page' : undefined}>
-        <Icon name={tab.id} />
-        <span>{tab.label}</span>
+    <li className="sp-nav-item">
+      <Link to={tab.to} className="sp-tab" aria-current={current === tab.id ? 'page' : undefined}>
+        <Icon name={tab.id} size={22} />
+        <span className="sp-tab-label">{tab.label}</span>
       </Link>
     </li>
   )
 }
 
-// Record sits second in the phone tab bar and last, as the hi-vis button, in the desktop header.
-// It is rendered in both places (one hidden per breakpoint) so focus order follows visual order.
+// Record sits second in the phone tab bar, as its green action, and last in the desktop header,
+// as the solid "Record movement" button. It is rendered in both places (one hidden per breakpoint)
+// so focus order follows visual order.
 function RecordButton({ placement, sheetOpen }) {
+  const wide = placement === 'wide'
   return (
-    <li className={`tab-record tab-record-${placement}`}>
+    <li className={wide ? 'sp-nav-item sp-nav-record-wide' : 'sp-nav-item sp-nav-record-phone'}>
       <button
         type="button"
-        className="tab"
+        className={wide ? 'sp-btn sp-btn-action' : 'sp-tab sp-tab-record'}
         aria-haspopup="dialog"
         aria-expanded={sheetOpen}
         onClick={() => openRecordSheet()}
       >
-        <Icon name="record" />
-        <span>{placement === 'wide' ? 'Record movement' : 'Record'}</span>
+        {wide ? (
+          <span>
+            Record<span className="sp-nav-record-more"> movement</span>
+          </span>
+        ) : (
+          <>
+            <Icon name="record" size={22} />
+            <span className="sp-tab-label">Record</span>
+          </>
+        )}
       </button>
     </li>
   )
@@ -42,8 +52,8 @@ function RecordButton({ placement, sheetOpen }) {
 export function NavBar({ current, sheetOpen }) {
   const [stock, ...rest] = TABS
   return (
-    <nav className="tabbar" aria-label="Primary">
-      <ul>
+    <nav className="sp-nav" aria-label="Primary">
+      <ul className="sp-nav-list">
         <Tab tab={stock} current={current} />
         <RecordButton placement="phone" sheetOpen={sheetOpen} />
         {rest.map((tab) => (
