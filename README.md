@@ -1,4 +1,39 @@
-# StockPilot
+<h1 align="center">StockPilot · Inventory Management</h1>
+
+<p align="center"><b>DevOps Final Capstone</b> · Lakshya Bagani (24BCS10457) · a small inventory app for shops and godowns, shipped through a tested, scanned and monitored delivery path to AWS EKS</p>
+
+<p align="center">
+  <a href="https://github.com/LakshyaBagani/Devops-StockPilot/actions/workflows/ci-cd.yml"><img alt="CI/CD" src="https://github.com/LakshyaBagani/Devops-StockPilot/actions/workflows/ci-cd.yml/badge.svg"></a>
+  <img alt="Python 3.14" src="https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-0.143-009688?logo=fastapi&logoColor=white">
+  <img alt="React 19" src="https://img.shields.io/badge/React-19-20232A?logo=react&logoColor=61DAFB">
+  <img alt="PostgreSQL 18" src="https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white">
+  <img alt="pytest" src="https://img.shields.io/badge/pytest-284%20passed-0A9EDC?logo=pytest&logoColor=white">
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-non--root%20multi--stage-2496ED?logo=docker&logoColor=white">
+  <img alt="Trivy" src="https://img.shields.io/badge/Trivy-0%20HIGH%2FCRITICAL-1904DA?logo=aquasecurity&logoColor=white">
+  <img alt="Terraform" src="https://img.shields.io/badge/Terraform-VPC%20%2B%20EKS-7B42BC?logo=terraform&logoColor=white">
+  <img alt="Kubernetes" src="https://img.shields.io/badge/Kubernetes-1.36-326CE5?logo=kubernetes&logoColor=white">
+  <img alt="Helm" src="https://img.shields.io/badge/Helm-4-0F1689?logo=helm&logoColor=white">
+  <img alt="Traefik" src="https://img.shields.io/badge/Traefik-Ingress-24A1C1?logo=traefikproxy&logoColor=white">
+  <img alt="Prometheus" src="https://img.shields.io/badge/Prometheus-metrics-E6522C?logo=prometheus&logoColor=white">
+  <img alt="Grafana" src="https://img.shields.io/badge/Grafana-dashboard-F46800?logo=grafana&logoColor=white">
+</p>
+
+<p align="center">
+  <b>▶ <a href="https://lakshyabagani.github.io/Devops-StockPilot/demo/">Walkthrough video (11 min 10 s)</a></b> &nbsp;·&nbsp;
+  <b><a href="http://adaa335fb7937490a86788abfe29a7d4-1379878377.ap-southeast-2.elb.amazonaws.com">Live app on EKS</a></b> &nbsp;·&nbsp;
+  <b><a href="docs/evidence/README.md">Evidence screenshots</a></b>
+</p>
+
+<p align="center"><img src="docs/evidence/m8-04b-app-eks-sidebar.png" alt="StockPilot running on AWS EKS, reached through the Traefik load balancer" width="900"><br><sub>StockPilot running on AWS EKS (ap-southeast-2), reached through the Traefik Ingress load balancer</sub></p>
+
+| | |
+|---|---|
+| **Walkthrough video (11 min 10 s)** | **[Watch in the browser](https://lakshyabagani.github.io/Devops-StockPilot/demo/)**: narrated walkthrough of the live app on EKS, pytest on PostgreSQL, non-root Docker images, the GitHub Actions pipeline with its test and Trivy gates, GHCR SHA tags, Terraform + AWS console, Kubernetes with Helm and the HPA scaling 2 → 5 under real load, Prometheus, Grafana, and a live commit pushed through the pipeline to EKS (the file is [`demo/presentation.mp4`](demo/presentation.mp4)) |
+| **Live app** | <http://adaa335fb7937490a86788abfe29a7d4-1379878377.ap-southeast-2.elb.amazonaws.com> (Traefik on an AWS load balancer; Swagger at [`/api/docs`](http://adaa335fb7937490a86788abfe29a7d4-1379878377.ap-southeast-2.elb.amazonaws.com/api/docs)) |
+| **Every rubric item and its screenshot** | [`docs/evidence/README.md`](docs/evidence/README.md) |
+| **Design** | [docs/architecture.md](docs/architecture.md) and the [ADRs](#13-design-decisions-adrs) |
+| **Repository** | <https://github.com/LakshyaBagani/Devops-StockPilot> |
 
 **Inventory management for small shops and godowns.** Staff record stock **in and out from their
 phones**. StockPilot keeps **live stock levels, stock value and days of cover** for every product,
@@ -9,22 +44,6 @@ Behind the app is the full DevOps path of the course capstone: tested FastAPI an
 non-root Docker images, a GitHub Actions pipeline with a strict Trivy gate and SHA-tagged images on
 GHCR, Terraform for a VPC and an EKS cluster, a Helm chart with an autoscaled backend behind a
 Traefik Ingress, and Prometheus with a Grafana dashboard shipped as code.
-
-| Item | Details |
-|---|---|
-| Live URL | Added after the EKS session: the load balancer hostname changes on every bring-up, and `make eks-bootstrap` stores it in the `APP_URL` repository variable |
-| Repository | <https://github.com/LakshyaBagani/Devops-StockPilot> |
-| Screenshot | [`docs/evidence/m1-03-ui-desktop-3000.png`](docs/evidence/m1-03-ui-desktop-3000.png) |
-| Design | [docs/architecture.md](docs/architecture.md) and the [ADRs](#13-design-decisions-adrs) |
-| Live demo | [docs/demo-script.md](docs/demo-script.md): commit, pipeline, deploy and autoscaling in about 10 minutes |
-| Author | Lakshya Bagani |
-
-**Status.** Everything in this repository is built and verified locally: tests on SQLite and
-PostgreSQL 18, both images (strict Trivy scan clean), Docker Compose, a full kind cluster with
-Traefik, the HPA and Prometheus/Grafana, offline Terraform checks and workflow linting. The steps that
-need the public GitHub repository or an AWS account (pipeline runs, GHCR packages, EKS evidence, live
-URL, actual spend) are described here and marked **after the GitHub repo** or **after the EKS
-session**; their links and screenshots are added when they exist.
 
 ## Contents
 
@@ -248,8 +267,9 @@ make eks-down          # ordered teardown, AWS-side gates, terraform destroy (ty
 make leftovers         # all-region sweep: exit 1 if anything billable is left
 ```
 
-Status: not run yet. The EKS results (plan, console screenshots, deploy run, live URL, destroy) are
-added after the EKS session.
+Status: run on 2026-10-16 in the borrowed `ap-southeast-2` project (cluster `spilot-eks`): plan,
+console screenshots, deploy runs and the live URL are in the [evidence index](#12-evidence-index);
+the `terraform destroy` screenshot is added after the evaluation.
 
 ## 6. Run the tests (M2)
 
@@ -461,8 +481,9 @@ by hand and stops at a typed confirmation; nothing applies from CI.
   `terraform test` cases with mocked providers (no AWS call). The planned creates are pinned by those
   tests: **65** on a fresh account (64 when GitHub's OIDC provider already exists), **3** (2) for the
   IAM-only `make eks-oidc`, and **62** for `make eks-up` after it.
-- **Not applied yet.** The `terraform plan` output, the VPC and EKS console screenshots and the
-  `terraform destroy` result are added after the EKS session.
+- **Applied** on 2026-10-16 (59 resources, `spilot-eks` in `ap-southeast-2`): the plan, VPC and EKS
+  console screenshots are in the [evidence index](#12-evidence-index); the `terraform destroy` result
+  is added after the evaluation.
 - `terraform.tfvars.example` is committed with placeholders that fail validation; the real
   `terraform.tfvars` is git-ignored and holds no credentials. `allowed_account_ids` stops a wrong AWS
   profile from planning, applying or destroying anything.
@@ -626,7 +647,7 @@ repository or an AWS session. Every PNG goes into `docs/evidence/` under the nam
 | M8 | `kubectl get pods` with every pod Running | kind: [transcript](docs/evidence/kind/terminal/m8-01-pods.txt); EKS: [`m8-01-pods.png`](docs/evidence/m8-01-pods.png) | Done |
 | M8 | `kubectl get svc` | kind: [transcript](docs/evidence/kind/terminal/m8-02-svc.txt); EKS: [`m8-02-svc.png`](docs/evidence/m8-02-svc.png) | Done |
 | M8 | `helm list` | kind: [transcript](docs/evidence/kind/terminal/m8-03-helm-list.txt); EKS: [`m8-03-helm-list.png`](docs/evidence/m8-03-helm-list.png) | Done |
-| M8 | Browser through the Ingress or load balancer | [`m8-04-ingress-browser.png`](docs/evidence/m8-04-ingress-browser.png) | Done |
+| M8 | Browser through the Ingress or load balancer | [`m8-04b-app-eks-sidebar.png`](docs/evidence/m8-04b-app-eks-sidebar.png), [`m8-04-ingress-browser.png`](docs/evidence/m8-04-ingress-browser.png) | Done |
 | M8 | (supporting) `k8s/namespace.yaml` applies cleanly | [`m8-00-namespace-apply.png`](docs/evidence/m8-00-namespace-apply.png) | Done |
 | M8 | (supporting) HPA scale-out 2 → 5 → 2 | kind: [transcript](docs/evidence/kind/terminal/m8-05-hpa-scaleout.txt); EKS: [`m8-05-hpa-scaleout.png`](docs/evidence/m8-05-hpa-scaleout.png) (2 → 3 → 5 under planner load) | Done |
 | M8 | (supporting) Ingress rules, `/api` answered by uvicorn | kind: [transcript](docs/evidence/kind/terminal/m8-06-ingress-rules.txt); EKS: [`m8-06-ingress-rules.png`](docs/evidence/m8-06-ingress-rules.png) | Done |
@@ -637,7 +658,7 @@ repository or an AWS session. Every PNG goes into `docs/evidence/` under the nam
 | M9 | Grafana dashboard with a populated panel | [`m9-03-grafana.png`](docs/evidence/m9-03-grafana.png) | Done |
 | M9 | (supporting) The monitoring release and its pods | kind: [transcript](docs/evidence/kind/terminal/m9-00-monitoring-pods.txt); EKS: [`m9-00-monitoring-pods.png`](docs/evidence/m9-00-monitoring-pods.png) | Done |
 | M10 | `README.md` in the repository root | This file | In repo |
-| M10 | Live demo, or a recorded walkthrough | [docs/demo-script.md](docs/demo-script.md); the backup video is recorded during the EKS rehearsal | Script in repo; video after EKS |
+| M10 | Live demo, or a recorded walkthrough | **[Walkthrough video](https://lakshyabagani.github.io/Devops-StockPilot/demo/)** ([`demo/presentation.mp4`](demo/presentation.mp4), 11 min 10 s, ending with a live commit `85a8df9` pushed through the pipeline to EKS), [`m10-01-live-change-diwali.png`](docs/evidence/m10-01-live-change-diwali.png), [docs/demo-script.md](docs/demo-script.md) | Done |
 
 ## 13. Design decisions (ADRs)
 
