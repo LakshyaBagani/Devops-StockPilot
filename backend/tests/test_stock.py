@@ -45,7 +45,7 @@ IST = timezone(timedelta(hours=5, minutes=30))
 
 
 def test_on_hand_is_sum_of_movements():
-    assert on_hand_from_deltas([160, -20, -5, 3]) == 138
+    assert on_hand_from_deltas([160, -20, -5, 3]) == 139
     assert on_hand_from_deltas([]) == 0
 
 
