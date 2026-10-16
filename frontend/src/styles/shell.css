@@ -1,4 +1,4 @@
-/* App shell: a light left rail with grouped destinations and a sticky top bar (from 640px); a slim
+/* App shell: a light left rail with the four destinations and a sticky top bar (from 640px); a slim
    header plus the bottom tab bar on phones. Loaded last, after theme.css. */
 
 :root {
@@ -54,23 +54,9 @@
   overflow-y: auto;
 }
 
-.sp-rail-section {
-  margin: 0;
-  padding: 14px 10px 6px;
-  color: var(--ink-4);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.sp-rail-group:first-child .sp-rail-section {
-  padding-top: 6px;
-}
-
 .sp-rail-list {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -135,25 +121,18 @@
     display: flex;
   }
 
-  /* Icons only: labels and section titles are hidden, the tooltip names each link. */
+  /* Icons only: the labels are hidden, the tooltip names each link. */
   .sp-rail-head {
     justify-content: center;
     padding: 0;
   }
 
-  .sp-rail-label,
-  .sp-rail-section {
+  .sp-rail-label {
     display: none;
   }
 
   .sp-rail-nav {
     padding: 12px 10px;
-  }
-
-  .sp-rail-group + .sp-rail-group {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid var(--line);
   }
 
   .sp-rail-link {
@@ -203,7 +182,7 @@
   }
 }
 
-/* --- desktops: the full rail with labels and section titles --- */
+/* --- desktops: the full rail with labels --- */
 @media (min-width: 1024px) {
   :root {
     --rail-w: 240px;
@@ -218,18 +197,8 @@
     display: inline;
   }
 
-  .sp-rail-section {
-    display: block;
-  }
-
   .sp-rail-nav {
     padding: 12px;
-  }
-
-  .sp-rail-group + .sp-rail-group {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
   }
 
   .sp-rail-link {
