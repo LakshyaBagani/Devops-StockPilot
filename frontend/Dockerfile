@@ -15,7 +15,7 @@ COPY . .
 ARG VITE_GIT_SHA=dev
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:1.30-alpine-slim@sha256:4ac59c85c8c46d9e91eaabd2122cda4923ba380cf11f4138e389f069bcdc77a3
+FROM nginx:1.27-alpine
 # The base entrypoint fills NGINX_LOCAL_RESOLVERS from /etc/resolv.conf, then renders the template
 # into conf.d with envsubst. backend:8000 suits compose; Kubernetes sets the backend's FQDN.
 ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1 API_UPSTREAM=backend:8000
