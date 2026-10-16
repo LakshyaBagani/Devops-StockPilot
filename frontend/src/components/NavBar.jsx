@@ -20,46 +20,51 @@ function Tab({ tab, current }) {
   )
 }
 
-// Record sits second in the phone tab bar, as its green action, and last in the desktop header,
-// as the solid "Record movement" button. It is rendered in both places (one hidden per breakpoint)
-// so focus order follows visual order.
-function RecordButton({ placement, sheetOpen }) {
-  const wide = placement === 'wide'
+// Phones: Record sits second in the bottom tab bar as its solid action.
+function RecordTab({ sheetOpen }) {
   return (
-    <li className={wide ? 'sp-nav-item sp-nav-record-wide' : 'sp-nav-item sp-nav-record-phone'}>
+    <li className="sp-nav-item sp-nav-record-phone">
       <button
         type="button"
-        className={wide ? 'sp-btn sp-btn-action' : 'sp-tab sp-tab-record'}
+        className="sp-tab sp-tab-record"
         aria-haspopup="dialog"
         aria-expanded={sheetOpen}
         onClick={() => openRecordSheet()}
       >
-        {wide ? (
-          <span>
-            Record<span className="sp-nav-record-more"> movement</span>
-          </span>
-        ) : (
-          <>
-            <Icon name="record" size={22} />
-            <span className="sp-tab-label">Record</span>
-          </>
-        )}
+        <Icon name="record" size={22} />
+        <span className="sp-tab-label">Record</span>
       </button>
     </li>
   )
 }
 
+// From 640px: the solid "Record movement" button on the right of the top bar.
+export function RecordAction({ sheetOpen }) {
+  return (
+    <button
+      type="button"
+      className="sp-btn sp-btn-action sp-header-record"
+      aria-haspopup="dialog"
+      aria-expanded={sheetOpen}
+      onClick={() => openRecordSheet()}
+    >
+      <Icon name="record" size={18} />
+      <span>Record movement</span>
+    </button>
+  )
+}
+
+// The bottom tab bar, phones only; the rail (Rail.jsx) takes over from 640px.
 export function NavBar({ current, sheetOpen }) {
   const [stock, ...rest] = TABS
   return (
     <nav className="sp-nav" aria-label="Primary">
       <ul className="sp-nav-list">
         <Tab tab={stock} current={current} />
-        <RecordButton placement="phone" sheetOpen={sheetOpen} />
+        <RecordTab sheetOpen={sheetOpen} />
         {rest.map((tab) => (
           <Tab key={tab.id} tab={tab} current={current} />
         ))}
-        <RecordButton placement="wide" sheetOpen={sheetOpen} />
       </ul>
     </nav>
   )

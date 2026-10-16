@@ -15,6 +15,7 @@ import './styles/pages/products.css'
 import './styles/pages/detail.css'
 import './styles/pages/planner.css'
 import './styles/theme.css'
+import './styles/shell.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
