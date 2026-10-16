@@ -1,7 +1,7 @@
 // Every UI constant lives here. The live demo edits only this file (one preset line + the subtitle).
 
 export const APP_NAME = 'StockPilot'
-export const APP_SUBTITLE = 'Diwali stock check 2026'
+export const APP_SUBTITLE = 'Diwali stock check 2026 · live demo'
 
 export const SURGE_PRESETS = [
   { label: 'No surge', pct: 0 },
