@@ -14,7 +14,7 @@ Traefik Ingress, and Prometheus with a Grafana dashboard shipped as code.
 |---|---|
 | Live URL | Added after the EKS session: the load balancer hostname changes on every bring-up, and `make eks-bootstrap` stores it in the `APP_URL` repository variable |
 | Repository | <https://github.com/LakshyaBagani/Devops-StockPilot> |
-| Screenshot | `docs/evidence/m1-03-ui-desktop-3000.png` (to capture, see the [evidence index](#12-evidence-index)) |
+| Screenshot | [`docs/evidence/m1-03-ui-desktop-3000.png`](docs/evidence/m1-03-ui-desktop-3000.png) |
 | Design | [docs/architecture.md](docs/architecture.md) and the [ADRs](#13-design-decisions-adrs) |
 | Live demo | [docs/demo-script.md](docs/demo-script.md): commit, pipeline, deploy and autoscaling in about 10 minutes |
 | Author | Lakshya Bagani |
@@ -305,7 +305,7 @@ Alembic cycle is clean, then **284 passed, 0 skipped** in about 27 s.
 The suite has 148 test functions (284 cases with parametrisation); `backend/pytest.ini` and
 `backend/conftest.py` configure it. The frontend has its own `node:test` suite (`make lint-frontend`).
 Links to the green CI run and PR-A are added after the GitHub repo exists; the screenshot is
-`docs/evidence/m2-01-pytest-v.png` (to capture from `make test-pg` on the final `main`).
+[`docs/evidence/m2-01-pytest-v.png`](docs/evidence/m2-01-pytest-v.png) (from `make test-pg`: 284 passed, 0 skipped).
 
 ## 7. CI/CD pipeline
 
@@ -586,35 +586,35 @@ repository or an AWS session. Every PNG goes into `docs/evidence/` under the nam
 | M1 | `backend/requirements.txt` | [`backend/requirements.txt`](backend/requirements.txt) | In repo |
 | M1 | `frontend/`: frontend sources | [`frontend/`](frontend/) | In repo |
 | M1 | `docker-compose.yml` | [`docker-compose.yml`](docker-compose.yml) | In repo |
-| M1 | Screenshot of the running app in the browser | `m1-03-ui-desktop-3000.png`, `m1-04-ui-mobile-3000.png` | To capture |
-| M1 | (supporting) Swagger UI with every endpoint | `m1-01-swagger-api-docs.png` | To capture |
-| M1 | (supporting) `/health` answers | [transcript](docs/evidence/terminal/m1-02-health-curl.txt); `m1-02-health-curl.png` | Transcript; PNG to capture |
-| M1 | (supporting) Alembic history and the tables | [transcript](docs/evidence/terminal/m1-05-alembic-history-psql-dt.txt); `m1-05-alembic-history-psql-dt.png` | Transcript; PNG to capture |
+| M1 | Screenshot of the running app in the browser | [`m1-03-ui-desktop-3000.png`](docs/evidence/m1-03-ui-desktop-3000.png), [`m1-04-ui-mobile-3000.png`](docs/evidence/m1-04-ui-mobile-3000.png) | Captured |
+| M1 | (supporting) Swagger UI with every endpoint | [`m1-01-swagger-api-docs.png`](docs/evidence/m1-01-swagger-api-docs.png) | Captured |
+| M1 | (supporting) `/health` answers | [transcript](docs/evidence/terminal/m1-02-health-curl.txt); [`m1-02-health-curl.png`](docs/evidence/m1-02-health-curl.png) | Captured |
+| M1 | (supporting) Alembic history and the tables | [transcript](docs/evidence/terminal/m1-05-alembic-history-psql-dt.txt); [`m1-05-alembic-history-psql-dt.png`](docs/evidence/m1-05-alembic-history-psql-dt.png) | Captured |
 | M2 | `backend/tests/` | [`backend/tests/`](backend/tests/) | In repo |
 | M2 | `backend/pytest.ini` or `backend/conftest.py` | [`pytest.ini`](backend/pytest.ini), [`conftest.py`](backend/conftest.py) | In repo |
-| M2 | Terminal screenshot of `pytest -v` passing | `m2-01-pytest-v.png`, from `make test-pg` on the final `main` | To capture |
-| M3 | GitHub repository URL | `https://github.com/LakshyaBagani/Devops-StockPilot` | After GitHub |
-| M3 | Commit history screenshot (at least 10 commits) | `m3-01-commits.png` (over 60 conventional commits) | After GitHub |
-| M3 | (supporting) `.gitignore` covers `.env`, `__pycache__`, `node_modules`, `.venv` | [transcript](docs/evidence/terminal/m3-02-gitignore.txt); `m3-02-gitignore.png` | Transcript; PNG to capture |
+| M2 | Terminal screenshot of `pytest -v` passing | [`m2-01-pytest-v.png`](docs/evidence/m2-01-pytest-v.png), from `make test-pg` on the final `main` | Captured |
+| M3 | GitHub repository URL | <https://github.com/LakshyaBagani/Devops-StockPilot> | Done |
+| M3 | Commit history screenshot (at least 10 commits) | [`m3-01-commits.png`](docs/evidence/m3-01-commits.png) (12 conventional commits) | Captured |
+| M3 | (supporting) `.gitignore` covers `.env`, `__pycache__`, `node_modules`, `.venv` | [transcript](docs/evidence/terminal/m3-02-gitignore.txt); [`m3-02-gitignore.png`](docs/evidence/m3-02-gitignore.png) | Captured |
 | M4 | `backend/Dockerfile` | [`backend/Dockerfile`](backend/Dockerfile) | In repo |
 | M4 | `frontend/Dockerfile` | [`frontend/Dockerfile`](frontend/Dockerfile) | In repo |
 | M4 | `docker-compose.yml` | [`docker-compose.yml`](docker-compose.yml) | In repo |
-| M4 | Terminal screenshot of `docker compose up --build` | [transcript](docs/evidence/terminal/m4-01-compose-up-build.txt) and [`compose ps`](docs/evidence/terminal/m4-02-compose-ps.txt); `m4-01-compose-up-build.png`, `m4-02-compose-ps.png` | Transcripts; PNGs to capture |
-| M4 | Browser at http://localhost:3000 | `m4-03-browser-localhost-3000.png` | To capture |
-| M4 | (supporting) Both images run as non-root | [transcript](docs/evidence/terminal/m4-04-nonroot-id.txt); `m4-04-nonroot-id.png` | Transcript; PNG to capture |
-| M4 | (supporting) The backend image builds | [transcript](docs/evidence/terminal/m4-05-docker-build-backend.txt); `m4-05-docker-build-backend.png` | Transcript; PNG to capture |
+| M4 | Terminal screenshot of `docker compose up --build` | [transcript](docs/evidence/terminal/m4-01-compose-up-build.txt) and [`compose ps`](docs/evidence/terminal/m4-02-compose-ps.txt); [`m4-01-compose-up-build.png`](docs/evidence/m4-01-compose-up-build.png), [`m4-02-compose-ps.png`](docs/evidence/m4-02-compose-ps.png) | Captured |
+| M4 | Browser at http://localhost:3000 | [`m4-03-browser-localhost-3000.png`](docs/evidence/m4-03-browser-localhost-3000.png) | Captured |
+| M4 | (supporting) Both images run as non-root | [transcript](docs/evidence/terminal/m4-04-nonroot-id.txt); [`m4-04-nonroot-id.png`](docs/evidence/m4-04-nonroot-id.png) | Captured |
+| M4 | (supporting) The backend image builds | [transcript](docs/evidence/terminal/m4-05-docker-build-backend.txt); [`m4-05-docker-build-backend.png`](docs/evidence/m4-05-docker-build-backend.png) | Captured |
 | M5 | `.github/workflows/` | [`ci-cd.yml`](.github/workflows/ci-cd.yml), [`whoami.yml`](.github/workflows/whoami.yml) | In repo |
-| M5 | Actions run URL of a green pipeline | Run URL and `m5-01-green-run.png` (the push run whose deploy is green) | After GitHub and EKS |
+| M5 | Actions run URL of a green pipeline | Run URL and [`m5-01-green-run.png`](docs/evidence/m5-01-green-run.png) (the push run whose deploy is green) | Captured |
 | M5 | GHCR package pages with SHA tags | `m5-03-ghcr-backend-tags.png`, `m5-04-ghcr-frontend-tags.png` | After GitHub |
-| M5 | (supporting) A failing test blocks the images (PR-A) | `m5-02-pr-a-red.png` and the PR-A link | After GitHub |
+| M5 | (supporting) A failing test blocks the images (PR-A) | [`m5-02-pr-a-red.png`](docs/evidence/m5-02-pr-a-red.png) and the PR-A link | Captured |
 | M6 | Trivy scan step in the workflow | Step "Trivy gate (HIGH/CRITICAL, strict)" in [`ci-cd.yml`](.github/workflows/ci-cd.yml) | In repo |
-| M6 | Screenshot of the Trivy output from a pipeline run | `m6-01-trivy-backend.png`, `m6-02-trivy-frontend.png`; the red gate `m6-03-pr-b-red.png` | After GitHub |
+| M6 | Screenshot of the Trivy output from a pipeline run | [`m6-01-trivy-backend.png`](docs/evidence/m6-01-trivy-backend.png), [`m6-02-trivy-frontend.png`](docs/evidence/m6-02-trivy-frontend.png); the red gate [`m6-03-pr-b-red.png`](docs/evidence/m6-03-pr-b-red.png) | Captured |
 | M6 | 2–3 sentences on what Trivy scanned and the result | [Security scan explained](#security-scan-explained) | In repo |
 | M7 | `terraform/`: all `.tf` files | [`terraform/`](terraform/) | In repo |
-| M7 | `terraform plan` output screenshot | `m7-00-init-fmt-validate.png`, `m7-01-plan.png` | After EKS (needs the AWS account) |
+| M7 | `terraform plan` output screenshot | [`m7-00-init-fmt-validate.png`](docs/evidence/m7-00-init-fmt-validate.png), `m7-01-plan.png` | After EKS (needs the AWS account) |
 | M7 | AWS Console with the VPC and the EKS cluster | `m7-02-vpc-resource-map.png`, `m7-03-eks-console-nodegroup.png`, `m7-03b-kubectl-nodes.png` | After EKS |
 | M7 | `terraform destroy` completion | `m7-04-destroy.png` | After EKS |
-| M7 | (supporting) `terraform.tfvars.example`, no credentials in Git | [`terraform.tfvars.example`](terraform/terraform.tfvars.example); `m7-05-gitleaks-full-history.png` (after GitHub); `m7-06-gitleaks-local.png` (to capture before the first push); optional `m7-07-oidc-whoami.png` (after EKS setup) | In repo; PNGs pending |
+| M7 | (supporting) `terraform.tfvars.example`, no credentials in Git | [`terraform.tfvars.example`](terraform/terraform.tfvars.example); `m7-05-gitleaks-full-history.png` (after GitHub); [`m7-06-gitleaks-local.png`](docs/evidence/m7-06-gitleaks-local.png) (to capture before the first push); optional `m7-07-oidc-whoami.png` (after EKS setup) | In repo; PNGs pending |
 | M8 | `k8s/`: namespace and bootstrap manifests | [`k8s/`](k8s/) | In repo |
 | M8 | `helm/`: the chart | [`helm/stockpilot/`](helm/stockpilot/) | In repo |
 | M8 | `kubectl get pods` with every pod Running | kind: [transcript](docs/evidence/kind/terminal/m8-01-pods.txt); EKS: `m8-01-pods.png` | Transcript; PNG after EKS |
