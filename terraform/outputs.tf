@@ -45,10 +45,10 @@ output "configure_kubectl" {
 
 output "github_actions_role_arn" {
   description = "Deploy role ARN; the repo variable AWS_DEPLOY_ROLE_ARN."
-  value       = aws_iam_role.github_actions.arn
+  value       = one(aws_iam_role.github_actions[*].arn)
 }
 
 output "github_oidc_subjects" {
   description = "The two OIDC subjects the deploy role trusts, for review against the whoami run."
-  value       = local.github_subjects
+  value       = var.enable_github_oidc ? local.github_subjects : []
 }

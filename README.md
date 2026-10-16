@@ -345,6 +345,12 @@ flowchart LR
 - **Deploy without keys:** the `deploy` job runs in the `production` environment (branch `main` only)
   and assumes `stockpilot-gha-deploy` through GitHub OIDC ([ADR-0003](docs/adr/0003-github-oidc-deploy.md)).
   The repository variable `DEPLOY_ENABLED` keeps the pipeline green while no cluster exists.
+- **Temporary exception, the graded deployment:** it runs in a borrowed AWS project
+  (`ap-southeast-2`) whose service control policy denies IAM OIDC providers. There, Terraform runs with
+  `enable_github_oidc = false` and `enable_irsa = false`, and the deploy job falls back to access keys
+  stored as `production` environment secrets (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`), used only
+  when `AWS_DEPLOY_ROLE_ARN` is unset. The keys are deleted with the cluster; the OIDC path stays the
+  default and returns when the stack moves to its own project.
 - **Proof that the gates bite:** two pull requests stay open and unmerged. **PR-A** changes one
   expected value in `test_on_hand_is_sum_of_movements`, so `backend` fails and no image is built.
   **PR-B** changes only the frontend runtime base to `nginx:1.27-alpine`, so the tests pass, the image

@@ -9,9 +9,14 @@ TF := terraform -chdir=terraform
 
 AWS_TARGETS := eks-preflight eks-oidc eks-plan eks-up eks-bootstrap eks-down leftovers
 
-# These targets always use the stockpilot profile and region, whatever the shell exports.
-$(AWS_TARGETS): export AWS_PROFILE := stockpilot
-$(AWS_TARGETS): export AWS_REGION := ap-south-1
+# These targets use the stockpilot profile and region, whatever the shell exports. Only the
+# deliberate SP_AWS_PROFILE / SP_AWS_REGION pair points them at another project.
+SP_AWS_PROFILE ?= stockpilot
+SP_AWS_REGION ?= ap-south-1
+$(AWS_TARGETS): export AWS_PROFILE := $(SP_AWS_PROFILE)
+$(AWS_TARGETS): export AWS_REGION := $(SP_AWS_REGION)
+$(AWS_TARGETS): export SP_AWS_PROFILE := $(SP_AWS_PROFILE)
+$(AWS_TARGETS): export SP_AWS_REGION := $(SP_AWS_REGION)
 
 .PHONY: tf-check $(AWS_TARGETS)
 
@@ -47,7 +52,7 @@ eks-up: ## Billing gate: plan, then apply only after you type APPLY (~$0.30/h fr
 	$(TF) apply -input=false tfplan
 	@rm -f terraform/tfplan
 	$$($(TF) output -raw configure_kubectl)
-	kubectl --context stockpilot-eks get nodes -o wide
+	kubectl --context "$$($(TF) output -raw cluster_name)" get nodes -o wide
 	@echo 'Next: make eks-bootstrap'
 
 eks-bootstrap: ## Namespaces, secrets, Traefik + its load balancer, monitoring, repo variables (re-runnable)

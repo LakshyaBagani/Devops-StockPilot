@@ -8,7 +8,7 @@
 # Must run on macOS /bin/bash 3.2. No set -e: an API error in one region must not stop the sweep.
 set -uo pipefail
 
-export AWS_PROFILE=stockpilot AWS_REGION=ap-south-1 AWS_PAGER="" AWS_DEFAULT_OUTPUT=text
+export AWS_PROFILE=${SP_AWS_PROFILE:-stockpilot} AWS_REGION=${SP_AWS_REGION:-ap-south-1} AWS_PAGER="" AWS_DEFAULT_OUTPUT=text
 
 # Column order of the report; count() has one query per column.
 KINDS="eks ec2 nat eip elb elbv2 ebs snap vpc logs kms"

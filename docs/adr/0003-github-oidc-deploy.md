@@ -64,3 +64,9 @@ Use **GitHub OIDC** (option 3), defined in Terraform:
 - Status: the role is written and its trust is unit-tested offline (`make tf-check`, mocked
   providers). The `make eks-oidc` apply and the first `whoami` run happen after the GitHub repository
   and the AWS account are set up.
+- Exception: an AWS project whose SCP denies `iam:CreateOpenIDConnectProvider` cannot host the role.
+  For that case `enable_github_oidc = false` skips the provider, role and access entry,
+  `enable_irsa = false` skips the cluster's IRSA provider (Pod Identity covers EBS CSI), and the deploy
+  job authenticates with access keys from `production` environment secrets. Those keys belong to the
+  identity that ran `terraform apply`, so the cluster-creator access entry is their Kubernetes
+  permission. Keys are long-lived, so this mode is temporary: the keys are deleted at teardown.

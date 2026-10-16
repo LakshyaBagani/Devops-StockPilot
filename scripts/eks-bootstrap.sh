@@ -14,7 +14,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-export AWS_PROFILE=stockpilot AWS_REGION=ap-south-1 AWS_PAGER=""
+export AWS_PROFILE=${SP_AWS_PROFILE:-stockpilot} AWS_REGION=${SP_AWS_REGION:-ap-south-1} AWS_PAGER=""
 export CHECKPOINT_DISABLE=1 # keeps terraform from phoning home
 # shellcheck source=scripts/lib/platform.sh
 . scripts/lib/platform.sh
@@ -114,11 +114,18 @@ wait_for_lb() {
 
 set_repo_vars() {
   local role
-  role=$(terraform -chdir=terraform output -raw github_actions_role_arn 2>/dev/null || true)
-  [ -n "$role" ] || role=$(aws iam get-role --role-name stockpilot-gha-deploy --query Role.Arn --output text)
+  role=$(terraform -chdir=terraform output -json github_actions_role_arn 2>/dev/null | jq -r '. // empty' || true)
   sp_log "repo variables on $REPO (the LB name changes on every bring-up)"
   gh variable set APP_URL --body "http://$LB" -R "$REPO"
-  gh variable set AWS_DEPLOY_ROLE_ARN --body "$role" -R "$REPO"
+  gh variable set AWS_REGION --body "$AWS_REGION" -R "$REPO"
+  gh variable set EKS_CLUSTER_NAME --body "$CLUSTER" -R "$REPO"
+  if [ -n "$role" ]; then
+    gh variable set AWS_DEPLOY_ROLE_ARN --body "$role" -R "$REPO"
+  else
+    # enable_github_oidc = false: CI falls back to the AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY secrets.
+    sp_log "no GitHub OIDC role in this project: CI deploys with the AWS access-key secrets"
+    gh variable delete AWS_DEPLOY_ROLE_ARN -R "$REPO" 2>/dev/null || true
+  fi
 }
 
 summary() {

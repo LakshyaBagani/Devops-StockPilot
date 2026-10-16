@@ -1,5 +1,6 @@
 ################################################################################
 # GitHub Actions -> AWS through OIDC: no long-lived keys in GitHub.
+# enable_github_oidc = false skips all of it, for an account whose SCP denies OIDC providers.
 #
 # Nothing in this file may reference the eks or vpc modules. make eks-oidc applies only the
 # three IAM addresses below (-target), before any cluster exists, and such a reference would
@@ -7,7 +8,7 @@
 ################################################################################
 
 resource "aws_iam_openid_connect_provider" "github" {
-  count = var.create_github_oidc_provider ? 1 : 0
+  count = var.enable_github_oidc && var.create_github_oidc_provider ? 1 : 0
 
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
@@ -16,13 +17,13 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 # An account holds one provider per URL; reuse it when it already exists.
 data "aws_iam_openid_connect_provider" "github" {
-  count = var.create_github_oidc_provider ? 0 : 1
+  count = var.enable_github_oidc && !var.create_github_oidc_provider ? 1 : 0
 
   url = "https://token.actions.githubusercontent.com"
 }
 
 locals {
-  github_oidc_provider_arn = var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github[0].arn
+  github_oidc_provider_arn = one(concat(aws_iam_openid_connect_provider.github[*].arn, data.aws_iam_openid_connect_provider.github[*].arn))
 
   # The deploy and whoami jobs declare this environment, and its branch policy allows only main.
   github_environment = "production"
@@ -40,6 +41,8 @@ locals {
 }
 
 data "aws_iam_policy_document" "github_actions_trust" {
+  count = var.enable_github_oidc ? 1 : 0
+
   statement {
     effect  = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -65,9 +68,11 @@ data "aws_iam_policy_document" "github_actions_trust" {
 }
 
 resource "aws_iam_role" "github_actions" {
+  count = var.enable_github_oidc ? 1 : 0
+
   name                 = "${var.project_name}-gha-deploy"
   description          = "GitHub Actions deploy role for ${var.github_owner}/${var.github_repo} (environment ${local.github_environment})"
-  assume_role_policy   = data.aws_iam_policy_document.github_actions_trust.json
+  assume_role_policy   = data.aws_iam_policy_document.github_actions_trust[0].json
   max_session_duration = 3600
 }
 
@@ -82,7 +87,9 @@ data "aws_iam_policy_document" "github_actions_eks" {
 }
 
 resource "aws_iam_role_policy" "github_actions_eks" {
+  count = var.enable_github_oidc ? 1 : 0
+
   name   = "eks-describe-cluster"
-  role   = aws_iam_role.github_actions.id
+  role   = aws_iam_role.github_actions[0].id
   policy = data.aws_iam_policy_document.github_actions_eks.json
 }

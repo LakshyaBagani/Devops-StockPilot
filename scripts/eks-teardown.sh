@@ -21,7 +21,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-export AWS_PROFILE=stockpilot AWS_REGION=ap-south-1 AWS_PAGER=""
+export AWS_PROFILE=${SP_AWS_PROFILE:-stockpilot} AWS_REGION=${SP_AWS_REGION:-ap-south-1} AWS_PAGER=""
 export CHECKPOINT_DISABLE=1 # keeps terraform from phoning home
 # shellcheck source=scripts/lib/platform.sh
 . scripts/lib/platform.sh

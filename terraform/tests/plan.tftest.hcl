@@ -27,6 +27,8 @@ variables {
   github_owner_id             = "11111111"
   github_repo_id              = "222222222"
   create_github_oidc_provider = true
+  enable_github_oidc          = true
+  enable_irsa                 = true
 }
 
 run "plan_offline" {
@@ -74,7 +76,7 @@ run "plan_offline" {
   }
 
   assert {
-    condition     = aws_iam_role.github_actions.name == "stockpilot-gha-deploy"
+    condition     = aws_iam_role.github_actions[0].name == "stockpilot-gha-deploy"
     error_message = "The deploy role must be named stockpilot-gha-deploy."
   }
 
@@ -100,5 +102,31 @@ run "existing_oidc_provider" {
   assert {
     condition     = length(data.aws_iam_openid_connect_provider.github) == 1
     error_message = "The existing OIDC provider must be looked up instead."
+  }
+}
+
+# An account whose SCP denies IAM OIDC providers: no GitHub role, no IRSA provider, and the
+# only access entry is the cluster creator's.
+run "no_oidc_account" {
+  command = plan
+
+  variables {
+    enable_github_oidc = false
+    enable_irsa        = false
+  }
+
+  assert {
+    condition     = length(aws_iam_role.github_actions) == 0 && length(aws_iam_openid_connect_provider.github) == 0 && length(data.aws_iam_openid_connect_provider.github) == 0
+    error_message = "enable_github_oidc = false must skip the GitHub OIDC provider and deploy role."
+  }
+
+  assert {
+    condition     = keys(module.eks.access_entries) == ["cluster_creator"]
+    error_message = "Without the GitHub role, the cluster creator must be the only access entry."
+  }
+
+  assert {
+    condition     = module.eks.oidc_provider_arn == null
+    error_message = "enable_irsa = false must not create the cluster OIDC provider."
   }
 }

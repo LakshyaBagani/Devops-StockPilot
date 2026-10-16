@@ -168,3 +168,15 @@ variable "create_github_oidc_provider" {
   type        = bool
   default     = true
 }
+
+variable "enable_github_oidc" {
+  description = "Create the GitHub OIDC deploy role and its EKS access entry. Set false in an account whose SCP denies IAM OIDC providers; CI then deploys with the access keys of the identity that ran terraform apply."
+  type        = bool
+  default     = true
+}
+
+variable "enable_irsa" {
+  description = "Let the eks module create the cluster's IAM OIDC provider for IRSA. Nothing here needs it (the EBS CSI driver uses Pod Identity); set false where the SCP denies OIDC providers."
+  type        = bool
+  default     = true
+}

@@ -27,6 +27,8 @@ variables {
   github_owner_id             = "11111111"
   github_repo_id              = "222222222"
   create_github_oidc_provider = true
+  enable_github_oidc          = true
+  enable_irsa                 = true
 }
 
 # The same three -target addresses as make eks-oidc.
@@ -63,7 +65,7 @@ run "eks_oidc" {
   }
 
   assert {
-    condition     = aws_iam_role.github_actions.name == "stockpilot-gha-deploy"
+    condition     = aws_iam_role.github_actions[0].name == "stockpilot-gha-deploy"
     error_message = "The targeted apply must create the role stockpilot-gha-deploy."
   }
 }

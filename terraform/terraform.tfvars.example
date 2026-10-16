@@ -27,3 +27,8 @@ github_repo_id  = "REPLACE_WITH_REPO_ID"
 # false if the provider already exists:
 # aws iam list-open-id-connect-providers --output text | grep token.actions.githubusercontent.com
 create_github_oidc_provider = true
+
+# Only for a project whose SCP denies IAM OIDC providers: no GitHub role (CI then uses the
+# AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY production secrets) and no IRSA provider.
+# enable_github_oidc = false
+# enable_irsa        = false

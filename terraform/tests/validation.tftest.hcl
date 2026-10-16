@@ -23,6 +23,8 @@ variables {
   github_owner_id             = "11111111"
   github_repo_id              = "222222222"
   create_github_oidc_provider = true
+  enable_github_oidc          = true
+  enable_irsa                 = true
 }
 
 run "bad_account_id" {

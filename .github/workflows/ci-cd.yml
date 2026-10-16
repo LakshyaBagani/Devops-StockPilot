@@ -381,7 +381,7 @@ jobs:
       url: ${{ vars.APP_URL }}
     permissions:
       contents: read
-      id-token: write # GitHub OIDC -> AWS STS; no stored AWS keys
+      id-token: write # GitHub OIDC -> AWS STS (the default; keys only where OIDC is denied)
     concurrency:
       group: deploy-production
       cancel-in-progress: false
@@ -389,6 +389,7 @@ jobs:
       AWS_REGION: ${{ vars.AWS_REGION }}
       EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
       AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      HAS_AWS_KEYS: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
       APP_URL: ${{ vars.APP_URL }}
       RELEASE: stockpilot
       NAMESPACE: stockpilot
@@ -396,11 +397,16 @@ jobs:
       - name: Preflight
         run: |
           missing=
-          for name in AWS_REGION EKS_CLUSTER_NAME AWS_DEPLOY_ROLE_ARN APP_URL; do
+          for name in AWS_REGION EKS_CLUSTER_NAME APP_URL; do
             [ -n "${!name}" ] || missing="$missing $name"
           done
           if [ -n "$missing" ]; then
             echo "::error::repository variables not set:$missing"
+            exit 1
+          fi
+          # OIDC role by default; access-key secrets only for a project whose SCP denies OIDC providers.
+          if [ -z "$AWS_DEPLOY_ROLE_ARN" ] && [ "$HAS_AWS_KEYS" != true ]; then
+            echo "::error::set the repository variable AWS_DEPLOY_ROLE_ARN (or the AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY secrets)"
             exit 1
           fi
           # A trailing slash would make //api/version, which Traefik routes to the SPA.
@@ -409,11 +415,19 @@ jobs:
         with:
           persist-credentials: false
       - name: Configure AWS credentials (OIDC)
+        if: vars.AWS_DEPLOY_ROLE_ARN != ''
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: gha-deploy-${{ github.run_id }}
+      - name: Configure AWS credentials (access keys)
+        if: vars.AWS_DEPLOY_ROLE_ARN == ''
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           version: ${{ env.HELM_VERSION }}

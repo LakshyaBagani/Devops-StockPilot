@@ -54,6 +54,9 @@ module "eks" {
   name               = var.cluster_name
   kubernetes_version = var.kubernetes_version
 
+  # IRSA is unused (Pod Identity); off where the SCP denies OIDC providers.
+  enable_irsa = var.enable_irsa
+
   # The laptop and GitHub-hosted runners reach the API over the internet; access stays IAM-authenticated.
   endpoint_public_access = true
 
@@ -124,9 +127,9 @@ module "eks" {
   enable_cluster_creator_admin_permissions = true
 
   # The CI deploy role; IAM grants it only eks:DescribeCluster (github-oidc.tf).
-  access_entries = {
+  access_entries = var.enable_github_oidc ? {
     github_actions = {
-      principal_arn = aws_iam_role.github_actions.arn
+      principal_arn = aws_iam_role.github_actions[0].arn
 
       policy_associations = {
         cluster_admin = {
@@ -137,7 +140,7 @@ module "eks" {
         }
       }
     }
-  }
+  } : {}
 }
 
 # IAM role for the EBS CSI controller, bound through EKS Pod Identity (no IRSA trust plumbing).
