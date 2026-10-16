@@ -21,7 +21,6 @@
 
 <p align="center">
   <b>▶ <a href="https://lakshyabagani.github.io/Devops-StockPilot/demo/">Walkthrough video (11 min 10 s)</a></b> &nbsp;·&nbsp;
-  <b><a href="http://adaa335fb7937490a86788abfe29a7d4-1379878377.ap-southeast-2.elb.amazonaws.com">Live app on EKS</a></b> &nbsp;·&nbsp;
   <b><a href="docs/evidence/README.md">Evidence screenshots</a></b>
 </p>
 
@@ -30,7 +29,7 @@
 | | |
 |---|---|
 | **Walkthrough video (11 min 10 s)** | **[Watch in the browser](https://lakshyabagani.github.io/Devops-StockPilot/demo/)**: narrated walkthrough of the live app on EKS, pytest on PostgreSQL, non-root Docker images, the GitHub Actions pipeline with its test and Trivy gates, GHCR SHA tags, Terraform + AWS console, Kubernetes with Helm and the HPA scaling 2 → 5 under real load, Prometheus, Grafana, and a live commit pushed through the pipeline to EKS (the file is [`demo/presentation.mp4`](demo/presentation.mp4)) |
-| **Live app** | <http://adaa335fb7937490a86788abfe29a7d4-1379878377.ap-southeast-2.elb.amazonaws.com> (Traefik on an AWS load balancer; Swagger at [`/api/docs`](http://adaa335fb7937490a86788abfe29a7d4-1379878377.ap-southeast-2.elb.amazonaws.com/api/docs)) |
+| **Live app** | Ran on AWS EKS (`spilot-eks`, ap-southeast-2) on 2026-10-16/17 and was destroyed after the evaluation to stop the bill; the video and [`m8-04b-app-eks-sidebar.png`](docs/evidence/m8-04b-app-eks-sidebar.png) show it live |
 | **Every rubric item and its screenshot** | [`docs/evidence/README.md`](docs/evidence/README.md) |
 | **Design** | [docs/architecture.md](docs/architecture.md) and the [ADRs](#13-design-decisions-adrs) |
 | **Repository** | <https://github.com/LakshyaBagani/Devops-StockPilot> |
@@ -269,7 +268,7 @@ make leftovers         # all-region sweep: exit 1 if anything billable is left
 
 Status: run on 2026-10-16 in the borrowed `ap-southeast-2` project (cluster `spilot-eks`): plan,
 console screenshots, deploy runs and the live URL are in the [evidence index](#12-evidence-index);
-the `terraform destroy` screenshot is added after the evaluation.
+destroyed cleanly on 2026-10-17 (59 resources, [`m7-04-destroy.png`](docs/evidence/m7-04-destroy.png)).
 
 ## 6. Run the tests (M2)
 
@@ -482,8 +481,8 @@ by hand and stops at a typed confirmation; nothing applies from CI.
   tests: **65** on a fresh account (64 when GitHub's OIDC provider already exists), **3** (2) for the
   IAM-only `make eks-oidc`, and **62** for `make eks-up` after it.
 - **Applied** on 2026-10-16 (59 resources, `spilot-eks` in `ap-southeast-2`): the plan, VPC and EKS
-  console screenshots are in the [evidence index](#12-evidence-index); the `terraform destroy` result
-  is added after the evaluation.
+  console screenshots are in the [evidence index](#12-evidence-index); destroyed cleanly on 2026-10-17
+  (59 resources, [`m7-04-destroy.png`](docs/evidence/m7-04-destroy.png)).
 - `terraform.tfvars.example` is committed with placeholders that fail validation; the real
   `terraform.tfvars` is git-ignored and holds no credentials. `allowed_account_ids` stops a wrong AWS
   profile from planning, applying or destroying anything.
@@ -640,7 +639,7 @@ repository or an AWS session. Every PNG goes into `docs/evidence/` under the nam
 | M7 | `terraform/`: all `.tf` files | [`terraform/`](terraform/) | In repo |
 | M7 | `terraform plan` output screenshot | [`m7-00-init-fmt-validate.png`](docs/evidence/m7-00-init-fmt-validate.png), [`m7-01-plan.png`](docs/evidence/m7-01-plan.png) (Plan: 59 to add) | Done |
 | M7 | AWS Console with the VPC and the EKS cluster | Console: [`m7-02c-console-vpc-resource-map.png`](docs/evidence/m7-02c-console-vpc-resource-map.png) (VPC resource map: 4 subnets, route tables, IGW, NAT), [`m7-03c-console-eks-cluster.png`](docs/evidence/m7-03c-console-eks-cluster.png) (EKS 1.36 Active), [`m7-03d-console-eks-networking.png`](docs/evidence/m7-03d-console-eks-networking.png) (cluster in our VPC), [`m7-02b-console-vpc.png`](docs/evidence/m7-02b-console-vpc.png), [`m7-03b-console-eks.png`](docs/evidence/m7-03b-console-eks.png) (node group); CLI: [`m7-02-vpc-public-subnets.png`](docs/evidence/m7-02-vpc-public-subnets.png), [`m7-03-eks-cluster-nodegroup.png`](docs/evidence/m7-03-eks-cluster-nodegroup.png) | Done (EKS `spilot-eks`, ap-southeast-2) |
-| M7 | `terraform destroy` completion | `m7-04-destroy.png` | After EKS |
+| M7 | `terraform destroy` completion | [`m7-04-destroy.png`](docs/evidence/m7-04-destroy.png) (Destroy complete! Resources: 59 destroyed), [`m7-04b-no-leftovers.png`](docs/evidence/m7-04b-no-leftovers.png) (no cluster, VPC, NAT, nodes or load balancer left) | Done |
 | M7 | (supporting) `terraform.tfvars.example`, no credentials in Git | [`terraform.tfvars.example`](terraform/terraform.tfvars.example); [`m7-05-gitleaks-full-history.png`](docs/evidence/m7-05-gitleaks-full-history.png); [`m7-06-gitleaks-local.png`](docs/evidence/m7-06-gitleaks-local.png) | Done |
 | M8 | `k8s/`: namespace and bootstrap manifests | [`k8s/`](k8s/) | In repo |
 | M8 | `helm/`: the chart | [`helm/stockpilot/`](helm/stockpilot/) | In repo |

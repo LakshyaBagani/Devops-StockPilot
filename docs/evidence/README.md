@@ -40,7 +40,7 @@ transcripts are the local kind rehearsal. The narrated walkthrough video is
 | M7 | `terraform/`: all `.tf` files | [`terraform/`](../../terraform/) | In repo |
 | M7 | `terraform plan` output screenshot | [`m7-00-init-fmt-validate.png`](m7-00-init-fmt-validate.png), [`m7-01-plan.png`](m7-01-plan.png) (Plan: 59 to add) | Done |
 | M7 | AWS Console with the VPC and the EKS cluster | Console: [`m7-02c-console-vpc-resource-map.png`](m7-02c-console-vpc-resource-map.png) (VPC resource map: 4 subnets, route tables, IGW, NAT), [`m7-03c-console-eks-cluster.png`](m7-03c-console-eks-cluster.png) (EKS 1.36 Active), [`m7-03d-console-eks-networking.png`](m7-03d-console-eks-networking.png) (cluster in our VPC), [`m7-02b-console-vpc.png`](m7-02b-console-vpc.png), [`m7-03b-console-eks.png`](m7-03b-console-eks.png) (node group); CLI: [`m7-02-vpc-public-subnets.png`](m7-02-vpc-public-subnets.png), [`m7-03-eks-cluster-nodegroup.png`](m7-03-eks-cluster-nodegroup.png) | Done (EKS `spilot-eks`, ap-southeast-2) |
-| M7 | `terraform destroy` completion | `m7-04-destroy.png` | After EKS |
+| M7 | `terraform destroy` completion | [`m7-04-destroy.png`](m7-04-destroy.png) (Destroy complete! Resources: 59 destroyed), [`m7-04b-no-leftovers.png`](m7-04b-no-leftovers.png) | Done |
 | M7 | (../../supporting) `terraform.tfvars.example`, no credentials in Git | [`terraform.tfvars.example`](../../terraform/terraform.tfvars.example); [`m7-05-gitleaks-full-history.png`](m7-05-gitleaks-full-history.png); [`m7-06-gitleaks-local.png`](m7-06-gitleaks-local.png) | Done |
 | M8 | `k8s/`: namespace and bootstrap manifests | [`k8s/`](../../k8s/) | In repo |
 | M8 | `helm/`: the chart | [`helm/stockpilot/`](../../helm/stockpilot/) | In repo |
