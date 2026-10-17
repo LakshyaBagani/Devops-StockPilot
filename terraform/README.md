@@ -220,7 +220,7 @@ This proves GitHub can assume the deploy role before any cluster exists.
 
    Reading the log: the **Print OIDC claims** step shows `sub: repo:LakshyaBagani@<owner-id>/Devops-StockPilot@<repo-id>:environment:production` (repos created after 2026-07-15 send this immutable form) or the legacy `repo:LakshyaBagani/Devops-StockPilot:environment:production`. It must equal one of the two strings from step 2, character for character. **Caller identity** shows an ARN containing `assumed-role/stockpilot-gha-deploy/gha-whoami-`, and **Permission probe** shows `ResourceNotFoundException`: the call was authorised and no cluster exists yet. On `AccessDenied`, compare the printed `sub` with the trust policy, fix `terraform.tfvars`, and run `make eks-oidc` again.
 
-6. Full plan for the evidence: `make eks-plan` shows `Plan: 62 to add, 0 to change, 0 to destroy.` and `Changes other than create: 0` (m7-00, m7-01). Then `rm -f terraform/tfplan`: a saved plan goes stale.
+6. Full plan for the evidence: `make eks-plan` shows `Plan: 62 to add, 0 to change, 0 to destroy.` (the graded run in a no-OIDC project: 59 to add) and `Changes other than create: 0` (m7-00, m7-01). Then `rm -f terraform/tfplan`: a saved plan goes stale.
 
 ## 8. Lifecycle (P9 session)
 
@@ -237,7 +237,7 @@ Every `aws` line below carries the profile and region (B65); `kubectl` uses the 
    ```
 
 2. `make eks-preflight`: all PASS.
-3. **`make eks-up` (you; billing starts).** It runs the preflight, init, fmt, validate and `plan -out tfplan`, prints the `Plan:` line and the count of changes other than create, then asks `Type APPLY:`. Review `Plan: 62 to add, 0 to change, 0 to destroy.` (65, or 64, on a fresh bring-up after a full destroy) and type `APPLY`. Anything else deletes the saved plan and creates nothing. The apply takes 15–22 minutes, then the target writes the kube context and lists the nodes. If the node group is still `CREATING` after about 10 minutes, check its health (section 14) before waiting longer.
+3. **`make eks-up` (you; billing starts).** It runs the preflight, init, fmt, validate and `plan -out tfplan`, prints the `Plan:` line and the count of changes other than create, then asks `Type APPLY:`. Review `Plan: 62 to add, 0 to change, 0 to destroy.` (the graded run in a no-OIDC project: 59 to add) (65, or 64, on a fresh bring-up after a full destroy) and type `APPLY`. Anything else deletes the saved plan and creates nothing. The apply takes 15–22 minutes, then the target writes the kube context and lists the nodes. If the node group is still `CREATING` after about 10 minutes, check its health (section 14) before waiting longer.
 4. **Verify:**
 
    ```bash
@@ -317,7 +317,7 @@ Guardrails: the $10 budget with credits excluded and three alerts; Cost Anomaly 
 1. Checks the AWS account against `aws_account_id` and the `gh` login, then sets `DEPLOY_ENABLED=false` (its first change) and waits until no `ci-cd.yml` run is queued or in progress, so no deploy recreates what it removes.
 2. Uninstalls inside the cluster: the `stockpilot-lab` namespace, the load generator, the `stockpilot` release, the `stockpilot` PVCs (StatefulSet volumes outlive the release; it waits until their PVs are gone, so the CSI driver deletes the EBS volumes), kube-prometheus-stack, the ALB controller if present (only after its load balancers are gone), and Traefik (its Service owns the Classic LB). It stops if any LoadBalancer Service or PVC remains.
 3. Waits (up to 10 minutes) until the AWS-side gates are empty: Classic LBs, elbv2 LBs and target groups in the VPC, `k8s-*` security groups in the VPC, and volumes tagged `ebs.csi.aws.com/cluster=true`. Kubernetes created all of these, and Terraform does not know them.
-4. `terraform destroy`: review it and type `yes`. Expect `Destroy complete! Resources: 65 destroyed.` (64 when the GitHub OIDC provider pre-existed); screenshot it (m7-04).
+4. `terraform destroy`: review it and type `yes`. Expect `Destroy complete! Resources: 65 destroyed.` (the graded run: 59 destroyed) (64 when the GitHub OIDC provider pre-existed); screenshot it (m7-04).
 5. Runs the leftover sweep (`scripts/aws-leftovers.sh`, the same as `make leftovers`), offers to delete the kube context, and reminds you to check Cost Explorer.
 
 Flags, for `scripts/eks-teardown.sh` directly:
@@ -392,17 +392,19 @@ If the Traefik Service gets no load balancer address although the subnet tags an
 
 ## 15. M7 evidence index
 
-| File | Shows | When |
-|---|---|---|
-| `docs/evidence/m7-00-init-fmt-validate.png` (to capture) | `make eks-plan`: `Terraform has been successfully initialized!`, fmt clean, `Success! The configuration is valid.` | P8 (TF-12) |
-| `docs/evidence/m7-01-plan.png` (to capture) | the plan tail: `Plan: 62 to add, 0 to change, 0 to destroy.` and `Changes other than create: 0` | P8 (TF-12) |
-| `docs/evidence/m7-02-vpc-resource-map.png` (to capture) | VPC console, `stockpilot-vpc` Resource map: 2 public subnets → route table → internet gateway; region Mumbai | P9 (TF-16) |
-| `docs/evidence/m7-03-eks-console-nodegroup.png` (to capture) | EKS console, `stockpilot-eks` Overview (1.36, Active, standard support) and the Compute tab node group; region Mumbai | P9 (TF-16) |
-| `docs/evidence/m7-03b-kubectl-nodes.png` (to capture) | `kubectl --context stockpilot-eks get nodes -o wide`: 2 Ready nodes on v1.36 with private IPs | P9 (TF-16) |
-| `docs/evidence/m7-04-destroy.png` (to capture) | `make eks-down`: the empty AWS-side gates and `Destroy complete! Resources: 65 destroyed.` | P9 (TF-17) |
-| `docs/evidence/m7-05-gitleaks-full-history.png` (to capture) | the `secrets` job's full-history gitleaks run, no leaks | P10 (CI-16) |
-
-Related: `docs/evidence/m7-06-gitleaks-local.png` (to capture) (the local gitleaks run before the first push, CI-02) and the optional `docs/evidence/m7-07-oidc-whoami.png` (to capture) (the whoami run, section 7).
+| File | Shows |
+|---|---|
+| [`m7-00-init-fmt-validate.png`](../docs/evidence/m7-00-init-fmt-validate.png) | `terraform init`, `fmt -check`, `validate` and the mocked tests |
+| [`m7-01-plan.png`](../docs/evidence/m7-01-plan.png) | `terraform plan` in the graded project: `Plan: 59 to add, 0 to change, 0 to destroy` |
+| [`m7-02c-console-vpc-resource-map.png`](../docs/evidence/m7-02c-console-vpc-resource-map.png) | VPC console resource map: `spilot-vpc`, 2 public + 2 private subnets, route tables, IGW, NAT |
+| [`m7-02-vpc-public-subnets.png`](../docs/evidence/m7-02-vpc-public-subnets.png) | The same VPC from the AWS CLI |
+| [`m7-03c-console-eks-cluster.png`](../docs/evidence/m7-03c-console-eks-cluster.png) | EKS console: `spilot-eks`, Kubernetes 1.36, Active |
+| [`m7-03b-console-eks.png`](../docs/evidence/m7-03b-console-eks.png) | EKS console: the managed node group, Active, 2 × `m7i-flex.large` |
+| [`m7-03-eks-cluster-nodegroup.png`](../docs/evidence/m7-03-eks-cluster-nodegroup.png) | Terraform outputs, cluster and node group from the CLI, `kubectl get nodes` (2 Ready) |
+| [`m7-04-destroy.png`](../docs/evidence/m7-04-destroy.png) | `terraform destroy`: `Destroy complete! Resources: 59 destroyed.` |
+| [`m7-04b-no-leftovers.png`](../docs/evidence/m7-04b-no-leftovers.png) | After destroy: no cluster, VPC, NAT, nodes or load balancer left, empty state |
+| [`m7-05-gitleaks-full-history.png`](../docs/evidence/m7-05-gitleaks-full-history.png) | CI `secrets` job on `workflow_dispatch`: gitleaks over the full history, no leaks |
+| [`m7-06-gitleaks-local.png`](../docs/evidence/m7-06-gitleaks-local.png) | The local gitleaks run before the first push |
 
 ## 16. Why each setting (viva sheet)
 

@@ -73,8 +73,9 @@ Traefik Ingress, and Prometheus with a Grafana dashboard shipped as code.
 
 What makes it more than CRUD:
 
-- **Stock is derived, never stored.** `on_hand = SUM(delta)` over an append-only ledger, so undo is
-  safe, the audit trail is complete and there is no counter to drift
+- **Stock is derived, never stored.** `on_hand = SUM(delta)` over a movement ledger whose rows are
+  never edited: a mistake is undone by deleting that one movement (refused if stock would go below
+  zero) and recording it again, so undo is safe and there is no counter to drift
   ([ADR-0005](docs/adr/0005-derived-stock-ledger.md)).
 - **No overselling, even with five replicas.** Every movement locks its product row
   (`SELECT … FOR UPDATE`) before it checks and writes; five PostgreSQL-only tests prove that
@@ -323,7 +324,8 @@ Alembic cycle is clean, then **284 passed, 0 skipped** in about 27 s.
 
 The suite has 148 test functions (284 cases with parametrisation); `backend/pytest.ini` and
 `backend/conftest.py` configure it. The frontend has its own `node:test` suite (`make lint-frontend`).
-Links to the green CI run and PR-A are added after the GitHub repo exists; the screenshot is
+In CI the same suite runs on a PostgreSQL 18 service in every pipeline ([green run](https://github.com/LakshyaBagani/Devops-StockPilot/actions/runs/38968899150); the
+deliberately failing [PR-A run](https://github.com/LakshyaBagani/Devops-StockPilot/actions/runs/38892765062)). The screenshot is
 [`docs/evidence/m2-01-pytest-v.png`](docs/evidence/m2-01-pytest-v.png) (from `make test-pg`: 284 passed, 0 skipped).
 
 ## 7. CI/CD pipeline
@@ -374,9 +376,12 @@ flowchart LR
   expected value in `test_on_hand_is_sum_of_movements`, so `backend` fails and no image is built.
   **PR-B** changes only the frontend runtime base to `nginx:1.27-alpine`, so the tests pass, the image
   builds, and `image (frontend)` fails at the strict Trivy gate.
-- **Checked locally:** actionlint and zizmor are clean on both workflows. The workflows have not run on
-  GitHub yet; the links to the latest green run, PR-A, PR-B and both GHCR package pages are added
-  after the GitHub repo exists.
+- **Checked locally:** actionlint and zizmor are clean on both workflows.
+- **Runs on GitHub:** [green run with deploy](https://github.com/LakshyaBagani/Devops-StockPilot/actions/runs/38968899150) (all 8 jobs, deploy to EKS included),
+  [PR-A](https://github.com/LakshyaBagani/Devops-StockPilot/pull/1) ([run](https://github.com/LakshyaBagani/Devops-StockPilot/actions/runs/38892765062): `backend` red, images skipped), [PR-B](https://github.com/LakshyaBagani/Devops-StockPilot/pull/2)
+  ([run](https://github.com/LakshyaBagani/Devops-StockPilot/actions/runs/38892773818): Trivy gate red), GHCR packages
+  [stockpilot-backend](https://github.com/users/LakshyaBagani/packages/container/package/stockpilot-backend) and
+  [stockpilot-frontend](https://github.com/users/LakshyaBagani/packages/container/package/stockpilot-frontend).
 
 ## 8. Security
 
@@ -388,8 +393,9 @@ Python libraries installed in the backend (the frontend image holds only nginx a
 Node packages). The gate step fails the job on any HIGH or CRITICAL finding, including findings that
 have no fix yet, so a vulnerable image never reaches GHCR or the cluster. Result for both StockPilot images: **0 HIGH/CRITICAL, strict mode (unfixed included),
 Trivy 0.75.0, DB 2026-10-15**, from `make scan` (the CI gate's flags on linux/amd64 builds;
-`.trivyignore` has no active entries). The pipeline's own scan tables are added after the GitHub repo
-exists.
+`.trivyignore` has no active entries). The pipeline's own scan tables are in
+[`m6-01-trivy-backend.png`](docs/evidence/m6-01-trivy-backend.png) and
+[`m6-02-trivy-frontend.png`](docs/evidence/m6-02-trivy-frontend.png) (from the [green run](https://github.com/LakshyaBagani/Devops-StockPilot/actions/runs/38968899150)'s image jobs).
 
 **One CVE explained: what the gate stops.** PR-B swaps only the frontend runtime base for the stale
 `nginx:1.27-alpine`. Scanned locally with the gate's flags on 2026-10-15, that base fails with 43
@@ -418,8 +424,8 @@ findings (41 HIGH, 2 CRITICAL). The top one:
 - **Why fail on it anyway.** Even on the stale base this bug would not be reachable, because the images
   are built for 64-bit platforms. The gate is a policy rather than a triage: when a fixed base exists,
   the build stays red until it is used.
-- The PR-B run link is added after the GitHub repo exists. The vulnerability database changes daily,
-  so if that run's top finding differs, this table is refreshed from its log.
+- The PR-B run: [https://github.com/LakshyaBagani/Devops-StockPilot/actions/runs/38892773818](https://github.com/LakshyaBagani/Devops-StockPilot/actions/runs/38892773818) ([`m6-03-pr-b-red.png`](docs/evidence/m6-03-pr-b-red.png)). The
+  vulnerability database changes daily, so a later re-run may report a different top finding.
 
 **The strict result in detail.** Both images use Alpine bases pinned by digest: `python:3.14-alpine`
 for the backend's build and runtime stages, with pip uninstalled, and
@@ -503,8 +509,8 @@ by hand and stops at a typed confirmation; nothing applies from CI.
 
 That is about $1.8 for a 6-hour session and about $50 for a week if forgotten, plus 18% GST. The plan
 is three short sessions (evidence, rehearsal, demo): $8–13 including GST with one overnight keep
-before the demo, about $6 without. **Actual spend** is added after the EKS sessions, from the Billing
-console.
+before the demo, about $6 without. The actual EKS run lasted about 6 hours
+(2026-10-16/17, `m7i-flex.large` nodes on a Free-plan project) and was destroyed the same night.
 
 **Teardown discipline:**
 
@@ -550,7 +556,7 @@ probe on the wrong path).
 
 **Planner sizing.** The default plan (1,000 scenarios, 30 days, 40 products) takes about 0.29 s of
 compute in a backend pod on kind, inside the 0.2–0.5 s target, so `PLANNER_DEFAULT_SCENARIOS` stays at
-1000. The calibration on the EKS node type is added after the EKS session.
+1000. On EKS (`m7i-flex.large`) the same default drove the HPA from 2 to 5 replicas within about 50 s under the load generator ([`m8-05-hpa-scaleout.png`](docs/evidence/m8-05-hpa-scaleout.png)).
 
 ## 11. Observability
 
@@ -601,9 +607,8 @@ kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 13000:80   
 
 Every "What to Submit" item of GRADING.md, and where it is. **In repo** links the file.
 **Transcript** links a committed terminal record (`docs/evidence/terminal/` for Compose, Docker and
-Git; `docs/evidence/kind/terminal/` for the kind cluster, a backup of the EKS shots). **To capture**
-is a PNG still to take locally; **after GitHub** and **after EKS** are PNGs that need the public
-repository or an AWS session. Every PNG goes into `docs/evidence/` under the name shown.
+Git; `docs/evidence/kind/terminal/` for the kind cluster, a backup of the EKS shots). Every
+screenshot is in `docs/evidence/`; [`docs/evidence/README.md`](docs/evidence/README.md) lists them by module.
 
 | Module | What to Submit (GRADING.md) | Evidence | Status |
 |---|---|---|---|
@@ -630,9 +635,9 @@ repository or an AWS session. Every PNG goes into `docs/evidence/` under the nam
 | M4 | (supporting) Both images run as non-root | [transcript](docs/evidence/terminal/m4-04-nonroot-id.txt); [`m4-04-nonroot-id.png`](docs/evidence/m4-04-nonroot-id.png) | Captured |
 | M4 | (supporting) The backend image builds | [transcript](docs/evidence/terminal/m4-05-docker-build-backend.txt); [`m4-05-docker-build-backend.png`](docs/evidence/m4-05-docker-build-backend.png) | Captured |
 | M5 | `.github/workflows/` | [`ci-cd.yml`](.github/workflows/ci-cd.yml), [`whoami.yml`](.github/workflows/whoami.yml) | In repo |
-| M5 | Actions run URL of a green pipeline | Run URL and [`m5-01-green-run.png`](docs/evidence/m5-01-green-run.png) (the push run whose deploy is green) | Captured |
+| M5 | Actions run URL of a green pipeline | <https://github.com/LakshyaBagani/Devops-StockPilot/actions/runs/38968899150> and [`m5-01-green-run.png`](docs/evidence/m5-01-green-run.png) (run #19, all 8 jobs green including `deploy` to EKS) | Done |
 | M5 | GHCR package pages with SHA tags | [`m5-03-ghcr-backend-tags.png`](docs/evidence/m5-03-ghcr-backend-tags.png), [`m5-04-ghcr-frontend-tags.png`](docs/evidence/m5-04-ghcr-frontend-tags.png) | Captured |
-| M5 | (supporting) A failing test blocks the images (PR-A) | [`m5-02-pr-a-red.png`](docs/evidence/m5-02-pr-a-red.png) and the PR-A link | Captured |
+| M5 | (supporting) A failing test blocks the images (PR-A) | [`m5-02-pr-a-red.png`](docs/evidence/m5-02-pr-a-red.png), [PR-A](https://github.com/LakshyaBagani/Devops-StockPilot/pull/1), [run](https://github.com/LakshyaBagani/Devops-StockPilot/actions/runs/38892765062) | Done |
 | M6 | Trivy scan step in the workflow | Step "Trivy gate (HIGH/CRITICAL, strict)" in [`ci-cd.yml`](.github/workflows/ci-cd.yml) | In repo |
 | M6 | Screenshot of the Trivy output from a pipeline run | [`m6-01-trivy-backend.png`](docs/evidence/m6-01-trivy-backend.png), [`m6-02-trivy-frontend.png`](docs/evidence/m6-02-trivy-frontend.png); the red gate [`m6-03-pr-b-red.png`](docs/evidence/m6-03-pr-b-red.png) | Captured |
 | M6 | 2–3 sentences on what Trivy scanned and the result | [Security scan explained](#security-scan-explained) | In repo |
@@ -667,7 +672,7 @@ repository or an AWS session. Every PNG goes into `docs/evidence/` under the nam
 | [0002](docs/adr/0002-traefik-ingress.md) | Traefik as the Ingress controller on kind and EKS (ingress-nginx is retired; the AWS Load Balancer Controller with an ALB is the documented alternative) |
 | [0003](docs/adr/0003-github-oidc-deploy.md) | Deploy through GitHub OIDC to a trust-scoped IAM role, with no stored AWS keys |
 | [0004](docs/adr/0004-in-cluster-postgres.md) | PostgreSQL as an in-cluster StatefulSet rather than Amazon RDS |
-| [0005](docs/adr/0005-derived-stock-ledger.md) | Stock derived from an append-only movement ledger, with row locks against overselling |
+| [0005](docs/adr/0005-derived-stock-ledger.md) | Stock derived from a movement ledger (rows never edited, undo deletes one row), with row locks against overselling |
 | [0006](docs/adr/0006-sha-pinned-actions.md) | Every GitHub Action pinned to a full commit SHA, after the March 2026 trivy-action compromise |
 | [0007](docs/adr/0007-reorder-planner-policy.md) | The planner simulates the shop's (s, Q) policy, with Q covering the planning horizon |
 

@@ -214,6 +214,6 @@ The rehearsal is the same script on the cluster the day before, with the same co
 repository admin. It is screen-recorded as the backup video, then reverted through a `revert(ui): …`
 pull request, before the `submission-v1` tag is created.
 
-- Rehearsal date, total duration and pipeline duration (push to deploy green): added after the EKS
-  rehearsal. Targets: the pipeline in at most 8 minutes with warm caches, the whole demo in at most
-  10 minutes.
+- Recorded on 2026-10-17 on EKS (`spilot-eks`): push of `85a8df9` to deploy green in 3 min 20 s
+  ([run 19](https://github.com/LakshyaBagani/Devops-StockPilot/actions/runs/38968899150)); the
+  narrated walkthrough is 11 min 10 s ([video](https://lakshyabagani.github.io/Devops-StockPilot/demo/)).
